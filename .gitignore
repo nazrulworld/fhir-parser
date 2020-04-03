@@ -8,7 +8,7 @@ env
 
 # ignore downloads
 /downloads
-
+/config/base_local.py
 # Editors
 .idea
 .vscode

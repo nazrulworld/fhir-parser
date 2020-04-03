@@ -141,21 +141,57 @@ class FHIRAbstractResource(fhirabstractbase.FHIRAbstractBase):
             return ret.json()
         return None
     
-    def delete(self):
+    def delete(self, server=None):
         """ Delete the receiver from the given server with a DELETE command.
         
+        :param FHIRServer server: The server to update the receiver on;
+            optional, will use the instance's `server` if needed.
         :returns: None or the response JSON on success
         """
-        if self.server is None:
+        srv = server or self.server
+        if srv is None:
             raise Exception("Cannot delete a resource that does not have a server")
         if not self.id:
             raise Exception("Cannot delete a resource that does not have an id")
         
-        ret = self.server.delete_json(self.relativePath())
+        ret = srv.delete_json(self.relativePath())
         if len(ret.text) > 0:
             return ret.json()
         return None
+    
+    
+    # MARK: - Search
+    
+    def search(self, struct=None):
+        """ Search can be started via a dictionary containing a search
+        construct.
+        
+        Calling this method with a search struct will return a `FHIRSearch`
+        object representing the search struct, with "$type" and "id" added.
+        
+        :param dict struct: An optional search structure
+        :returns: A FHIRSearch instance
+        """
+        if struct is None:
+            struct = {'$type': self.__class__.resource_type}
+        if self._local_id is not None or self.id is not None:
+            struct['id'] = self._local_id or self.id
+        return self.__class__.where(struct)
+    
+    @classmethod
+    def where(cls, struct):
+        """ Search can be started via a dictionary containing a search
+        construct.
+        
+        Calling this method with a search struct will return a `FHIRSearch`
+        object representing the search struct
+        
+        :param dict struct: A search structure
+        :returns: A FHIRSearch instance
+        """
+        return fhirsearch.FHIRSearch(cls, struct)
 
 
 from . import fhirdate
+from . import fhirsearch
 from . import fhirelementfactory

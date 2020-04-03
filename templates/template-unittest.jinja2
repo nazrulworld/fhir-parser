@@ -4,15 +4,18 @@
 #  Generated from FHIR {{ info.version }} on {{ info.date }}.
 #  {{ info.year }}, SMART Health IT.
 
-
 import os
+import pytest
 import io
 import unittest
 import json
-from . import {{ class.module }}
-from .fhirdate import FHIRDate
+
+from .fixtures import force_bytes
+from .. import {{ class.module }}
+from ..fhirdate import FHIRDate
 
 
+@pytest.mark.usefixtures("base_settings")
 class {{ class.name }}Tests(unittest.TestCase):
     def instantiate_from(self, filename):
         datadir = os.environ.get('FHIR_UNITTEST_DATADIR') or ''
@@ -36,7 +39,7 @@ class {{ class.name }}Tests(unittest.TestCase):
     def impl{{ class.name }}{{ loop.index }}(self, inst):
     {%- for onetest in tcase.tests %}
     {%- if "str" == onetest.klass.name %}
-        self.assertEqual(inst.{{ onetest.path }}, "{{ onetest.value|replace('"', '\\"') }}")
+        self.assertEqual(force_bytes(inst.{{ onetest.path }}), force_bytes("{{ onetest.value | replace('"', '\\"') | replace('\\n', '\\\\n') }}"))
     {%- else %}{% if "int" == onetest.klass.name or "float" == onetest.klass.name or "NSDecimalNumber" == onetest.klass.name %}
         self.assertEqual(inst.{{ onetest.path }}, {{ onetest.value }})
     {%- else %}{% if "bool" == onetest.klass.name %}
