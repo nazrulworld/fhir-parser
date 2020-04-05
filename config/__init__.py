@@ -84,6 +84,7 @@ class Configuration(object):
             storage["BASE_PATH"] = base_path
 
         needed_paths = (
+            "CACHE_PATH",
             "RESOURCE_TARGET_DIRECTORY",
             "FACTORY_TARGET_NAME",
             "DEPENDENCIES_TARGET_FILE_NAME",

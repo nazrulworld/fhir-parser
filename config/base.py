@@ -2,6 +2,7 @@ import os
 import pathlib
 """Variable Start Here """
 BASE_PATH = pathlib.Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+CACHE_PATH = "downloads"
 # classmap
 CLASS_MAP = {
     "Any": "Resource",
@@ -79,7 +80,7 @@ FHIR_BASE_URL = "http://hl7.org/fhir"
 # current_version
 CURRENT_VERSION = "R4"
 # previous_versions
-PREVIOUS_VERSIONS = ["STU3"]
+PREVIOUS_VERSIONS = {"STU3"}
 
 # specification_url
 SPECIFICATION_URL = "/".join([FHIR_BASE_URL, CURRENT_VERSION])
@@ -95,7 +96,7 @@ WRITE_RESOURCES = True
 
 # tpl_resource_target
 # target directory to write the generated class files to
-RESOURCE_TARGET_DIRECTORY = "../tmp/fhir/resources"
+RESOURCE_TARGET_DIRECTORY = "../fhir/resources"
 
 # tpl_resource_target_ptrn
 # target class file name pattern, with one placeholder (`{}`) for the class name

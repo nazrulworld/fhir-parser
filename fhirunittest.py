@@ -7,6 +7,7 @@ import sys
 import glob
 import json
 import os.path
+import pathlib
 
 from logger import logger
 import fhirclass
@@ -177,9 +178,7 @@ class FHIRUnitTestItem(object):
 
         # regular test case; skip string tests that are longer than 200 chars
         else:
-            isstr = isinstance(self.value, str)
-            if not isstr and sys.version_info[0] < 3:       # Python 2.x has 'str' and 'unicode'
-                isstr = isinstance(self.value, basestring)
+            isstr = isinstance(self.value, (str, bytes))
 
             value = self.value
             if isstr:
@@ -206,14 +205,25 @@ class FHIRResourceFile(object):
     """ A FHIR example resource file.
     """
     @classmethod
-    def find_all(cls, directory):
+    def find_all(cls, directory: pathlib.Path):
         """ Finds all example JSON files in the given directory.
         """
-        assert os.path.isdir(directory)
+
+        assert directory.is_dir()
         all_tests = []
-        for utest in glob.glob(os.path.join(directory, '*-example*.json')):
-            if 'canonical.json' not in utest:
-                all_tests.append(cls(filepath=utest))
+        for filepath in directory.glob("*.json"):
+            if 'canonical.json' == filepath.name:
+                continue
+            with open(str(filepath), "r") as fp:
+                data = json.load(fp)
+                if "resourceType" not in data:
+                    continue
+                if data["resourceType"] == "StructureDefinition":
+                    continue
+                if data["resourceType"] not in fhirclass.FHIRClass.known:
+                    continue
+
+            all_tests.append(cls(filepath=filepath))
 
         return all_tests
 

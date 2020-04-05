@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import io
-import os.path
 from logger import logger
 from config import Configuration
 import pathlib
+
 
 class FHIRLoader(object):
     """ Class to download the files needed for the generator.

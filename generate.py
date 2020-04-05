@@ -8,128 +8,148 @@
 #  Supply "-l" to only download the spec
 #  Supply "-k" to keep previous version of FHIR resources
 
-import io
-import os
 import sys
 
 import config
 import fhirloader
 import fhirspec
 import fhirclass
-from distutils.version import StrictVersion
+import typing
+import click
+import pathlib
 
-_cache = "downloads"
+from utils import ensure_init_py
+from utils import update_pytest_fixture
+
+_cache_path = "downloads"
 
 
-def ensure_init_py(settings, version_info):
+@click.command()
+@click.option(
+    "--fhir-release",
+    "-r",
+    type=click.Choice(["STU3", "R4"], case_sensitive=True),
+    help="FHIR Release",
+    default=None,
+    required=False,
+)
+@click.option("--dry-run", "-d", is_flag=True, default=False, help="Dry Run")
+@click.option(
+    "--force-download", "-f", is_flag=True, default=False, help="Force Download"
+)
+@click.option("--load-only", "-l", is_flag=True, default=False, help="Load Only")
+@click.option("--cache-only", "-c", is_flag=True, default=False, help="Cache only")
+@click.option(
+    "--build-previous-versions",
+    "-k",
+    is_flag=True,
+    default=False,
+    help="Build previous versions",
+)
+@click.option(
+    "--previous-versions",
+    "-p",
+    multiple=True,
+    type=click.Choice(["STU3", "R4"], case_sensitive=True),
+    required=False,
+)
+def main(
+    dry_run: bool,
+    force_download: bool,
+    load_only: bool,
+    cache_only: bool,
+    build_previous_versions: bool,
+    fhir_release: str = None,
+    previous_versions: typing.Sequence[str] = None,
+):
     """ """
-    init_tpl = """# _*_ coding: utf-8 _*_\n\n__fhir_version__ = "{0}"\n""".format(
-        version_info.version
+    settings = config.Configuration()
+    if fhir_release is not None:
+        settings["CURRENT_VERSION"] = fhir_release
+        settings["SPECIFICATION_URL"] = "/".join([settings.FHIR_BASE_URL, fhir_release])
+    if previous_versions:
+        settings["PREVIOUS_VERSIONS"] = set(previous_versions)
+
+    spec_source = load(settings, force_download=force_download, cache_only=cache_only)
+    if load_only is False:
+        generate_from_fhir_spec(spec_source, settings, dry_run=dry_run)
+
+    # checks for previous version maintain handler
+    current_version = settings["CURRENT_VERSION"]
+    previous_versions = [
+        pv
+        for pv in getattr(settings, "PREVIOUS_VERSIONS", set())
+        if pv != current_version
+    ]
+
+    if len(previous_versions) > 0 and build_previous_versions is True:
+        # backup originals
+        ORG_SPECIFICATION_URL = settings.SPECIFICATION_URL
+        ORG_RESOURCE_TARGET_DIRECTORY = settings.RESOURCE_TARGET_DIRECTORY
+        ORG_FACTORY_TARGET_NAME = settings.FACTORY_TARGET_NAME
+        ORG_UNITTEST_TARGET_DIRECTORY = settings.UNITTEST_TARGET_DIRECTORY
+        for pv in previous_versions:
+            # reset cache, important!
+            fhirclass.FHIRClass.known = {}
+
+            settings["CURRENT_VERSION"] = pv
+            settings["SPECIFICATION_URL"] = "/".join([settings.FHIR_BASE_URL, pv])
+
+            settings["RESOURCE_TARGET_DIRECTORY"] = ORG_RESOURCE_TARGET_DIRECTORY / pv
+
+            settings["FACTORY_TARGET_NAME"] = (
+                ORG_FACTORY_TARGET_NAME.parent / pv / ORG_FACTORY_TARGET_NAME.name
+            )
+
+            settings["UNITTEST_TARGET_DIRECTORY"] = (
+                ORG_UNITTEST_TARGET_DIRECTORY.parent
+                / pv
+                / ORG_UNITTEST_TARGET_DIRECTORY.name
+            )
+            spec_source = load(
+                settings, force_download=force_download, cache_only=cache_only
+            )
+            if load_only is False:
+                generate_from_fhir_spec(spec_source, settings, dry_run=dry_run)
+                if dry_run is False:
+                    update_pytest_fixture(settings)
+
+        # restore originals
+        fhirclass.FHIRClass.known = {}
+        settings["CURRENT_VERSION"] = current_version
+        settings["SPECIFICATION_URL"] = ORG_SPECIFICATION_URL
+        settings["RESOURCE_TARGET_DIRECTORY"] = ORG_FACTORY_TARGET_NAME
+        settings["FACTORY_TARGET_NAME"] = ORG_FACTORY_TARGET_NAME
+        settings["UNITTEST_TARGET_DIRECTORY"] = ORG_UNITTEST_TARGET_DIRECTORY
+
+    return 0
+
+
+def load(settings: config.Configuration, force_download: bool, cache_only: bool):
+    """ """
+    loader = fhirloader.FHIRLoader(
+        settings, settings.BASE_PATH / _cache_path / settings.CURRENT_VERSION
     )
+    spec_source = loader.load(force_download=force_download, force_cache=cache_only)
+    return spec_source
 
-    for file_location in [settings.RESOURCE_TARGET_DIRECTORY, settings.UNITTEST_TARGET_DIRECTORY]:
 
-        if (file_location / "__init__.py").exists():
-            lines = list()
-            has_fhir_version = False
-            with io.open(
-                (file_location / "__init__.py"), "r"
-            ) as fp:
-                for line in fp:
-                    if "__fhir_version__" in line:
-                        has_fhir_version = True
-                        parts = list()
-                        parts.append(line.split("=")[0])
-                        parts.append('"{0}"'.format(version_info.version))
-
-                        line = "= ".join(parts)
-                    lines.append(line.rstrip('\n'))
-
-            if not has_fhir_version:
-                lines.append('__fhir_version__ = "{0}"'.format(version_info.version))
-
-            txt = "\n".join(lines)
-        else:
-            txt = init_tpl
-
-        with io.open((file_location / "__init__.py"), "w") as fp:
-            fp.write(txt)
+def generate_from_fhir_spec(
+    spec_source: pathlib.Path, settings: config.Configuration, dry_run: bool
+):
+    """ """
+    spec = fhirspec.FHIRSpec(spec_source, settings)
+    if dry_run is False:
+        spec.write()
+        # ensure init py has been created
+        ensure_init_py(settings, spec.info)
 
 
 if "__main__" == __name__:
-
-    force_download = len(sys.argv) > 1 and "-f" in sys.argv
-    dry = len(sys.argv) > 1 and ("-d" in sys.argv or "--dry-run" in sys.argv)
-    load_only = len(sys.argv) > 1 and ("-l" in sys.argv or "--load-only" in sys.argv)
-    force_cache = len(sys.argv) > 1 and ("-c" in sys.argv or "--cache-only" in sys.argv)
-    keep_previous_versions = len(sys.argv) > 1 and (
-        "-k" in sys.argv or "--keep-previous-versions" in sys.argv
-    )
-
-    # assure we have all files
-    settings = config.Configuration()
-    loader = fhirloader.FHIRLoader(settings, settings.BASE_PATH / _cache / settings.CURRENT_VERSION)
-    spec_source = loader.load(force_download=force_download, force_cache=force_cache)
-
-    # parse
-    if not load_only:
-
-        spec = fhirspec.FHIRSpec(spec_source, settings)
-        if not dry:
-            spec.write()
-            # ensure init py has been created
-            ensure_init_py(settings, spec.info)
-
-    # checks for previous version maintain handler
-    previous_version_info = getattr(settings, "PREVIOUS_VERSIONS", [])
-
-    if previous_version_info and keep_previous_versions:
-        # backup originals
-        org_specification_url = settings.SPECIFICATION_URL
-        org_tpl_resource_target = settings.RESOURCE_TARGET_DIRECTORY
-        org_tpl_factory_target = settings.FACTORY_TARGET_NAME
-        org_tpl_unittest_target = settings.UNITTEST_TARGET_DIRECTORY
-
-        for version in previous_version_info:
-            # reset cache
-            fhirclass.FHIRClass.known = {}
-
-            settings.SPECIFICATION_URL = (
-                "/".join(org_specification_url.split("/")[:-1]) + "/" + version
-            )
-            settings.RESOURCE_TARGET_DIRECTORY = org_tpl_resource_target / version
-
-            settings.FACTORY_TARGET_NAME = org_tpl_factory_target.parent / version / org_tpl_factory_target.name
-
-            settings.UNITTEST_TARGET_DIRECTORY = org_tpl_unittest_target.parent / version / org_tpl_unittest_target.name
-
-            # ##========>
-            loader = fhirloader.FHIRLoader(settings, settings.BASE_PATH / _cache / version)
-            spec_source = loader.load(
-                force_download=force_download, force_cache=force_cache
-            )
-            # parse
-            if not load_only:
-                spec = fhirspec.FHIRSpec(spec_source, settings)
-
-                if not dry:
-                    spec.write()
-                    # ensure init py has been created
-                    ensure_init_py(settings, spec.info)
-
-        # restore originals
-        settings.SPECIFICATION_URL = org_specification_url
-        settings.RESOURCE_TARGET_DIRECTORY = org_tpl_resource_target
-        settings.FACTORY_TARGET_NAME = org_tpl_factory_target
-        settings.UNITTEST_TARGET_DIRECTORY = org_tpl_unittest_target
-        """
-        if (StrictVersion(fhir_v_info[0]) > StrictVersion(cached_v_info[0])) and not force_download:
-            sys.stdout.write(
-                '==> New FHIR version {0} is available! However resources '
-                'are generated from cache.'.format(fhir_v_info[0]))
-
-        if keep_previous_versions and getattr(settings, 'previous_versions', None):
-
-            for version in settings.previous_versions:
-                update_pytest_fixture(version)
-        """
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        click.echo(
+            "Operation aborted, as interrupted by user.", color=click.style("yellow")
+        )
+        sys.exit(1)
