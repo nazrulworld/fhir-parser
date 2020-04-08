@@ -77,13 +77,13 @@ ENUM_NAME_MAP = {
 # base_url
 FHIR_BASE_URL = "http://hl7.org/fhir"
 
-# current_version
-CURRENT_VERSION = "R4"
-# previous_versions
-PREVIOUS_VERSIONS = {"STU3"}
+# CURRENT_VERSION
+CURRENT_RELEASE_NAME = "R4"
+# PREVIOUS_VERSIONS
+PREVIOUS_RELEASES = {"STU3"}
 
 # specification_url
-SPECIFICATION_URL = "/".join([FHIR_BASE_URL, CURRENT_VERSION])
+SPECIFICATION_URL = "/".join([FHIR_BASE_URL, CURRENT_RELEASE_NAME])
 
 # tpl_base
 # In which directory to find the templates.

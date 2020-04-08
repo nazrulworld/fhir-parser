@@ -65,20 +65,20 @@ def main(
     """ """
     settings = config.Configuration()
     if fhir_release is not None:
-        settings["CURRENT_VERSION"] = fhir_release
+        settings["CURRENT_RELEASE_NAME"] = fhir_release
         settings["SPECIFICATION_URL"] = "/".join([settings.FHIR_BASE_URL, fhir_release])
     if previous_versions:
-        settings["PREVIOUS_VERSIONS"] = set(previous_versions)
+        settings["PREVIOUS_RELEASES"] = set(previous_versions)
 
     spec_source = load(settings, force_download=force_download, cache_only=cache_only)
     if load_only is False:
         generate_from_fhir_spec(spec_source, settings, dry_run=dry_run)
 
     # checks for previous version maintain handler
-    current_version = settings["CURRENT_VERSION"]
+    current_version = settings["CURRENT_RELEASE_NAME"]
     previous_versions = [
         pv
-        for pv in getattr(settings, "PREVIOUS_VERSIONS", set())
+        for pv in getattr(settings, "PREVIOUS_RELEASES", set())
         if pv != current_version
     ]
 
@@ -92,7 +92,7 @@ def main(
             # reset cache, important!
             fhirclass.FHIRClass.known = {}
 
-            settings["CURRENT_VERSION"] = pv
+            settings["CURRENT_RELEASE_NAME"] = pv
             settings["SPECIFICATION_URL"] = "/".join([settings.FHIR_BASE_URL, pv])
 
             settings["RESOURCE_TARGET_DIRECTORY"] = ORG_RESOURCE_TARGET_DIRECTORY / pv
@@ -116,7 +116,7 @@ def main(
 
         # restore originals
         fhirclass.FHIRClass.known = {}
-        settings["CURRENT_VERSION"] = current_version
+        settings["CURRENT_RELEASE_NAME"] = current_version
         settings["SPECIFICATION_URL"] = ORG_SPECIFICATION_URL
         settings["RESOURCE_TARGET_DIRECTORY"] = ORG_FACTORY_TARGET_NAME
         settings["FACTORY_TARGET_NAME"] = ORG_FACTORY_TARGET_NAME
@@ -128,7 +128,7 @@ def main(
 def load(settings: config.Configuration, force_download: bool, cache_only: bool):
     """ """
     loader = fhirloader.FHIRLoader(
-        settings, settings.BASE_PATH / _cache_path / settings.CURRENT_VERSION
+        settings, settings.BASE_PATH / _cache_path / settings.CURRENT_RELEASE_NAME
     )
     spec_source = loader.load(force_download=force_download, force_cache=cache_only)
     return spec_source

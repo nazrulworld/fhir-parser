@@ -1,7 +1,6 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from models.fhirsearch import FHIRSearch
+from resources.fhirsearch import FHIRSearch
 
 if '__main__' == __name__:
     from models.patient import Patient

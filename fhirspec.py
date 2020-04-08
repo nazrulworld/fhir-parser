@@ -291,18 +291,28 @@ class FHIRVersionInfo(object):
         self.year = now.year
 
         self.version = None
-        infofile = os.path.join(directory, "version.info")
+        self.version_raw = None
+        self.build = None
+        self.revision = None
+        infofile = directory / "version.info"
         self.read_version(infofile)
 
     def read_version(self, filepath):
-        assert os.path.isfile(filepath)
+        assert filepath.is_file
         with io.open(filepath, "r", encoding="utf-8") as handle:
             text = handle.read()
             for line in text.split("\n"):
                 if "=" in line:
                     (n, v) = line.strip().split("=", 2)
                     if "FhirVersion" == n:
+                        self.version_raw = v
+                    elif "version" == n:
                         self.version = v
+                    elif "buildId" == n:
+                        self.build = v
+                    elif "revision" == n:
+                        self.revision = v
+
 
 
 class FHIRValueSet(object):
@@ -445,6 +455,8 @@ class FHIRStructureDefinition(object):
         self._class_map = {}
         self.classes = []
         self._did_finalize = False
+        self.fhir_version = None
+        self.fhir_last_updated = None
 
         if profile is not None:
             self.parse_profile(profile)
@@ -471,6 +483,8 @@ class FHIRStructureDefinition(object):
 
         # parse structure
         self.url = profile.get("url")
+        self.fhir_version = profile.get("fhirVersion")
+        self.fhir_last_updated = profile.get("meta", {}).get("lastUpdated")
         logger.info('Parsing profile "{}"'.format(profile.get("name")))
         self.structure = FHIRStructureDefinitionStructure(self, profile)
 

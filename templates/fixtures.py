@@ -13,12 +13,10 @@ from os.path import dirname
 
 EXAMPLE_RESOURCES_URL = (
     "https://github.com/nazrulworld/fhir-parser/raw/"
-    "master/archives/HL7/FHIR/{release}/"
-    "{fhir_version}-examples-json.zip"
+    "master/archives/HL7/FHIR/{{release}}/"
+    "{{fhir_version}}-examples-json.zip"
 )
 ROOT_PATH = dirname(dirname(dirname(dirname(os.path.abspath(__file__)))))
-PARSER_PATH = os.path.join(ROOT_PATH, "fhir-parser")
-SCRIPT_PATH = os.path.join(ROOT_PATH, "script")
 CACHE_PATH = os.path.join(ROOT_PATH, ".cache")
 
 
@@ -75,12 +73,7 @@ def base_settings():
 
     settings = {}
 
-    with io.open(os.path.join(SCRIPT_PATH, "settings.py"), "r") as fp:
-        exec(fp.read(), settings)
-
-    example_data_file_uri = "/".join(
-        [settings["base_url"], settings["current_version"], "examples-json.zip"]
-    )
+    example_data_file_uri = EXAMPLE_RESOURCES_URL
 
     example_data_file_id = hashlib.md5(example_data_file_uri.encode()).hexdigest()
 

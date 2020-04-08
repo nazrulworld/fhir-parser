@@ -1,9 +1,15 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
-#  Generated from FHIR {{ info.version }} ({{ profile.url }}) on {{ info.date }}.
-#  {{ info.year }}, SMART Health IT.
-
+"""
+Profile: {{ profile.url }}
+Release: {{ release_name }}
+Version: {{ profile.fhir_version }}
+{%- if info.build %}
+Build ID: {{ info.build }}
+{%- elif info.revision %}
+Revision: {{ info.revision }}
+{%- endif %}
+Last updated: {{ profile.fhir_last_updated }}
+"""
 {%- set imported = {} %}
 {%- for klass in classes %}
 

@@ -91,13 +91,14 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                 continue
 
             imports = profile.needed_external_classes()
+
             data = {
                 "profile": profile,
+                "release_name": self.spec.settings.CURRENT_RELEASE_NAME,
                 "info": self.spec.info,
                 "imports": imports,
                 "classes": classes,
             }
-
             ptrn = (
                 profile.targetname.lower()
                 if self.settings.RESOURCE_MODULE_LOWERCASE
@@ -209,7 +210,17 @@ class FHIRUnitTestRenderer(FHIRRenderer):
                     logger.info(
                         "Copying unittest file {} to {}".format(filepath.name, target)
                     )
-                    shutil.copyfile(filepath, target)
+                    if filepath.name == "fixtures.py":
+                        with open(filepath, "r") as fp:
+                            contents = fp.read()
+                            contents = contents.replace(
+                                "{{release}}", self.settings.CURRENT_RELEASE_NAME
+                            ).replace("{{fhir_version}}", self.spec.info.version)
+
+                        with open(target, "w") as fp:
+                            fp.write(contents)
+                    else:
+                        shutil.copyfile(filepath, target)
                 else:
                     logger.warn(
                         'Unit test file "{0}" configured in `UNITTEST_COPY_FILES` does not exist'.format(
