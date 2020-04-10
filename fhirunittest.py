@@ -214,8 +214,11 @@ class FHIRResourceFile(object):
         for filepath in directory.glob("*.json"):
             if 'canonical.json' == filepath.name:
                 continue
-            with open(str(filepath), "r") as fp:
-                data = json.load(fp)
+            with open(str(filepath), "r", encoding="utf-8") as fp:
+                try:
+                    data = json.load(fp)
+                except json.decoder.JSONDecodeError:
+                    continue
                 if "resourceType" not in data:
                     continue
                 if data["resourceType"] == "StructureDefinition":

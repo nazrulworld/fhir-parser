@@ -190,7 +190,14 @@ class FHIRUnitTestRenderer(FHIRRenderer):
 
         # render all unit test collections
         for coll in self.spec.unit_tests:
-            data = {"info": self.spec.info, "class": coll.klass, "tests": coll.tests}
+
+            data = {
+                "info": self.spec.info,
+                "class": coll.klass,
+                "tests": coll.tests,
+                "profile": self.spec.profiles[coll.klass.name.lower()],
+                "release_name": self.settings.CURRENT_RELEASE_NAME
+            }
 
             file_pattern = coll.klass.name
             if self.settings.RESOURCE_MODULE_LOWERCASE:
