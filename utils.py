@@ -3,7 +3,7 @@ import configparser
 
 def ensure_init_py(settings, version_info):
     """ """
-    init_tpl = """# _*_ coding: utf-8 _*_\n\n__fhir_version__ = "{0}"\n""".format(
+    init_tpl = """# -*- coding: utf-8 -*-\n\n__fhir_version__ = "{0}"\n""".format(
         version_info.version
     )
 
@@ -54,17 +54,7 @@ def update_pytest_fixture(settings):
             elif "CACHE_PATH =" in line:
                 parts = list()
                 parts.append(line.split("=")[0])
-                parts.append(f"os.path.join(ROOT_PATH, '.cache', '{settings.CURRENT_VERSION}')\n")
-                line = "= ".join(parts)
-
-            elif "example_data_file_uri =" in line:
-
-                parts = list()
-                parts.append(line.split("=")[0])
-                parts.append(
-                    f"'/'.join([settings['base_url'], "
-                    f"'{settings.CURRENT_VERSION}', 'examples-json.zip'])\n"
-                )
+                parts.append(f"os.path.join(ROOT_PATH, '.cache', '{settings.CURRENT_RELEASE_NAME}')\n")
                 line = "= ".join(parts)
 
             lines.append(line)
@@ -76,8 +66,8 @@ def update_pytest_fixture(settings):
         str(settings.RESOURCE_TARGET_DIRECTORY / "tests" / "conftest.py"), "w", encoding="utf-8"
     ) as fp:
         fp.write(
-            "# _*_ coding: utf-8 _*_\n"
-            f"pytest_plugins = ['fhir.resources.{settings.CURRENT_VERSION}.tests.fixtures']\n"
+            "# -*- coding: utf-8 _*_\n"
+            f"pytest_plugins = ['fhir.resources.{settings.CURRENT_RELEASE_NAME}.tests.fixtures']\n"
         )
 
 
