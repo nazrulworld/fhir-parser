@@ -13,7 +13,6 @@ import sys
 import config
 import fhirloader
 import fhirspec
-import fhirclass
 import typing
 import click
 import pathlib
@@ -62,13 +61,25 @@ def main(
     fhir_release: str = None,
     previous_versions: typing.Sequence[str] = None,
 ):
-    """ """
-    settings = config.Configuration()
+    """
+    required_variables = [
+
+            "FHIR_BASE_URL",
+            "CURRENT_RELEASE_NAME",
+            "PREVIOUS_RELEASES",
+            "SPECIFICATION_URL",
+
+        ]
+    """
+    settings = fhirspec.Configuration.from_module(config)
+    updates = dict()
     if fhir_release is not None:
-        settings["CURRENT_RELEASE_NAME"] = fhir_release
-        settings["SPECIFICATION_URL"] = "/".join([settings.FHIR_BASE_URL, fhir_release])
+        updates["CURRENT_RELEASE_NAME"] = fhir_release
+        updates["SPECIFICATION_URL"] = "/".join([settings.FHIR_BASE_URL, fhir_release])
     if previous_versions:
-        settings["PREVIOUS_RELEASES"] = set(previous_versions)
+        updates["PREVIOUS_RELEASES"] = set(previous_versions)
+
+    settings.update(updates)
 
     spec_source = load(settings, force_download=force_download, cache_only=cache_only)
     if load_only is False:
@@ -84,28 +95,42 @@ def main(
 
     if len(previous_versions) > 0 and build_previous_versions is True:
         # backup originals
+        originals = {
+            "SPECIFICATION_URL": settings.SPECIFICATION_URL,
+            "RESOURCE_TARGET_DIRECTORY": settings.RESOURCE_TARGET_DIRECTORY,
+            "FACTORY_TARGET_NAME": settings.FACTORY_TARGET_NAME,
+            "UNITTEST_TARGET_DIRECTORY": settings.UNITTEST_TARGET_DIRECTORY,
+            "CURRENT_RELEASE_NAME": settings.CURRENT_RELEASE_NAME
+        }
         ORG_SPECIFICATION_URL = settings.SPECIFICATION_URL
         ORG_RESOURCE_TARGET_DIRECTORY = settings.RESOURCE_TARGET_DIRECTORY
         ORG_FACTORY_TARGET_NAME = settings.FACTORY_TARGET_NAME
         ORG_UNITTEST_TARGET_DIRECTORY = settings.UNITTEST_TARGET_DIRECTORY
         for pv in previous_versions:
             # reset cache, important!
-            fhirclass.FHIRClass.known = {}
-
-            settings["CURRENT_RELEASE_NAME"] = pv
-            settings["SPECIFICATION_URL"] = "/".join([settings.FHIR_BASE_URL, pv])
-
-            settings["RESOURCE_TARGET_DIRECTORY"] = ORG_RESOURCE_TARGET_DIRECTORY / pv
-
-            settings["FACTORY_TARGET_NAME"] = (
-                ORG_FACTORY_TARGET_NAME.parent / pv / ORG_FACTORY_TARGET_NAME.name
-            )
-
-            settings["UNITTEST_TARGET_DIRECTORY"] = (
-                ORG_UNITTEST_TARGET_DIRECTORY.parent
-                / pv
-                / ORG_UNITTEST_TARGET_DIRECTORY.name
-            )
+            fhirspec.FHIRClass.known = {}
+            customs = {
+                "SPECIFICATION_URL": "/".join([settings.FHIR_BASE_URL, pv]),
+                "RESOURCE_TARGET_DIRECTORY": originals["RESOURCE_TARGET_DIRECTORY"] / pv,
+                "FACTORY_TARGET_NAME": originals["FACTORY_TARGET_NAME"].parent / pv / originals["FACTORY_TARGET_NAME"].name,
+                "UNITTEST_TARGET_DIRECTORY": originals["UNITTEST_TARGET_DIRECTORY"].parent / pv / originals["UNITTEST_TARGET_DIRECTORY"].name,
+                "CURRENT_RELEASE_NAME": pv
+            }
+            # settings["CURRENT_RELEASE_NAME"] = pv
+            # settings["SPECIFICATION_URL"] = "/".join([settings.FHIR_BASE_URL, pv])
+            #
+            # settings["RESOURCE_TARGET_DIRECTORY"] = ORG_RESOURCE_TARGET_DIRECTORY / pv
+            #
+            # settings["FACTORY_TARGET_NAME"] = (
+            #     ORG_FACTORY_TARGET_NAME.parent / pv / ORG_FACTORY_TARGET_NAME.name
+            # )
+            #
+            # settings["UNITTEST_TARGET_DIRECTORY"] = (
+            #     ORG_UNITTEST_TARGET_DIRECTORY.parent
+            #     / pv
+            #     / ORG_UNITTEST_TARGET_DIRECTORY.name
+            # )
+            settings.update(customs)
             spec_source = load(
                 settings, force_download=force_download, cache_only=cache_only
             )
@@ -115,17 +140,18 @@ def main(
                     update_pytest_fixture(settings)
 
         # restore originals
-        fhirclass.FHIRClass.known = {}
-        settings["CURRENT_RELEASE_NAME"] = current_version
-        settings["SPECIFICATION_URL"] = ORG_SPECIFICATION_URL
-        settings["RESOURCE_TARGET_DIRECTORY"] = ORG_FACTORY_TARGET_NAME
-        settings["FACTORY_TARGET_NAME"] = ORG_FACTORY_TARGET_NAME
-        settings["UNITTEST_TARGET_DIRECTORY"] = ORG_UNITTEST_TARGET_DIRECTORY
+        fhirspec.FHIRClass.known = {}
+        settings.update(originals)
+        # settings["CURRENT_RELEASE_NAME"] = current_version
+        # settings["SPECIFICATION_URL"] = ORG_SPECIFICATION_URL
+        # settings["RESOURCE_TARGET_DIRECTORY"] = ORG_FACTORY_TARGET_NAME
+        # settings["FACTORY_TARGET_NAME"] = ORG_FACTORY_TARGET_NAME
+        # settings["UNITTEST_TARGET_DIRECTORY"] = ORG_UNITTEST_TARGET_DIRECTORY
 
     return 0
 
 
-def load(settings: config.Configuration, force_download: bool, cache_only: bool):
+def load(settings: fhirspec.Configuration, force_download: bool, cache_only: bool):
     """ """
     loader = fhirloader.FHIRLoader(
         settings, settings.BASE_PATH / _cache_path / settings.CURRENT_RELEASE_NAME
@@ -135,10 +161,10 @@ def load(settings: config.Configuration, force_download: bool, cache_only: bool)
 
 
 def generate_from_fhir_spec(
-    spec_source: pathlib.Path, settings: config.Configuration, dry_run: bool
+    spec_source: pathlib.Path, settings: fhirspec.Configuration, dry_run: bool
 ):
     """ """
-    spec = fhirspec.FHIRSpec(spec_source, settings)
+    spec = fhirspec.FHIRSpec(settings, spec_source)
     if dry_run is False:
         spec.write()
         # ensure init py has been created

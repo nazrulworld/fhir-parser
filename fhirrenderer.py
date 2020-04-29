@@ -185,9 +185,8 @@ class FHIRUnitTestRenderer(FHIRRenderer):
     """
 
     def render(self):
-        if self.spec.unit_tests is None:
+        if not self.spec.unit_tests:
             return
-
         # render all unit test collections
         for coll in self.spec.unit_tests:
 

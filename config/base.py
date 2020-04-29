@@ -242,3 +242,4 @@ MANUAL_PROFILES = [
     ),
     ("templates/fhirsearch.py", "fhirsearch", ["FHIRSearch"]),
 ]
+RESOURCES_WRITER_CLASS = "utils.ResourceWriter"

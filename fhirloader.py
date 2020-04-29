@@ -1,9 +1,7 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-import io
 from logger import logger
-from config import Configuration
+from fhirspec import Configuration
+from fhirspec import download
 import pathlib
 
 
@@ -15,7 +13,7 @@ class FHIRLoader(object):
     """
     needs = {
         'version.info': ('version.info', None),
-        'examples-json.zip': ('examples-json.zip', "examples_json"),
+        'examples-json.zip': ('examples-json.zip', "examples"),
         'definitions.json.zip': ("definitions.json.zip", "definitions")
     }
 
@@ -49,7 +47,8 @@ class FHIRLoader(object):
                     raise Exception('Resource missing from cache: {}'.format(local))
                 logger.info('Downloading {}'.format(remote))
                 remote, expand_dir = remote
-                filename = self.download(remote)
+                filepath = self.download(remote)
+                filename = filepath.name
                 # unzip
                 if '.zip' == filename[-4:]:
                     logger.info('Extracting {}'.format(filename))
@@ -59,7 +58,7 @@ class FHIRLoader(object):
                         if not target.exists():
                             target.mkdir()
 
-                    self.expand(filename, target=target)
+                    FHIRLoader.expand(filepath, target=target)
             else:
                 uses_cache = True
 
@@ -77,24 +76,17 @@ class FHIRLoader(object):
         import requests     # import here as we can bypass its use with a manual download
 
         url = self.base_url+'/'+filename
-        path_ = self.cache / filename
         print(url)
-        ret = requests.get(url)
-        if not ret.ok:
-            raise Exception("Failed to download {0}".format(url))
-        with io.open(path_, 'wb') as handle:
-            for chunk in ret.iter_content():
-                handle.write(chunk)
+        return download(url, download_directory=self.cache)
 
-        return filename
-
-    def expand(self, local, target):
+    @staticmethod
+    def expand(filepath: pathlib.Path, target: pathlib.Path):
         """ Expand the ZIP file at the given path to the cache directory.
         """
-        path_ = self.cache / local
-        assert path_.exists()
-        import zipfile      # import here as we can bypass its use with a manual unzip
+        assert filepath.exists() and filepath.is_file()
+        # import here as we can bypass its use with a manual unzip
+        import zipfile
 
-        with zipfile.ZipFile(path_) as z:
+        with zipfile.ZipFile(filepath) as z:
             z.extractall(target)
 

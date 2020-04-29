@@ -1,4 +1,6 @@
 import configparser
+from fhirspec import FHIRSpecWriter
+import fhirrenderer
 
 
 def ensure_init_py(settings, version_info):
@@ -87,3 +89,28 @@ def get_cached_version_info(spec_source):
         config.read_string("\n".join(txt.split("\n")[1:]))
 
     return config["FHIR"]["version"], config["FHIR"]["fhirversion"]
+
+
+class ResourceWriter(FHIRSpecWriter):
+
+    def write(self):
+        """
+        """
+        if self.settings.WRITE_RESOURCES:
+            renderer = fhirrenderer.FHIRStructureDefinitionRenderer(self.spec, self.settings)
+            renderer.render()
+
+            vsrenderer = fhirrenderer.FHIRValueSetRenderer(self.spec, self.settings)
+            vsrenderer.render()
+
+        if self.settings.WRITE_FACTORY:
+            renderer = fhirrenderer.FHIRFactoryRenderer(self.spec, self.settings)
+            renderer.render()
+
+        if self.settings.WRITE_DEPENDENCIES:
+            renderer = fhirrenderer.FHIRDependencyRenderer(self.spec, self.settings)
+            renderer.render()
+
+        if self.settings.WRITE_UNITTESTS:
+            renderer = fhirrenderer.FHIRUnitTestRenderer(self.spec, self.settings)
+            renderer.render()
