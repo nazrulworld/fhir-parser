@@ -9,6 +9,9 @@ from pydantic import AnyUrl
 from pydantic.errors import StrRegexError
 from pydantic.types import ConstrainedDecimal
 from pydantic.types import ConstrainedInt
+from pydantic.typing import AnyCallable
+from typing import Union
+from typing import List
 from pydantic.class_validators import make_generic_validator
 from typing import TYPE_CHECKING
 from uuid import UUID
@@ -20,6 +23,9 @@ from pydantic.validators import bool_validator
 import re
 
 __author__ = "Md Nazrul Islam<email2nazrul@gmail.com>"
+
+_CUSTOM_TYPE_VALIDATORS: Dict[str, List[AnyCallable]] = dict()
+
 
 if TYPE_CHECKING:
     Boolean = bool
@@ -236,11 +242,43 @@ class Time(datetime.time):
     __visit_name__ = "time"
 
 
-def get_fhir_type_class(type_name):
+def add_validator_for_fhir_type(
+    type_name_or_model_name: str, validator: AnyCallable, index: int = -1
+):
+    """ """
+    global _CUSTOM_TYPE_VALIDATORS
     try:
-        return globals()[type_name + "Type"]
+        cls = globals()[type_name_or_model_name]
     except KeyError:
-        raise LookupError(f"'{__name__}.{type_name}Type' doesnt found.")
+        cls = get_fhir_type_class(type_name_or_model_name)
+
+    if cls.__name__ not in _CUSTOM_TYPE_VALIDATORS:
+        _CUSTOM_TYPE_VALIDATORS[cls.__name__] = list()
+
+    if validator in _CUSTOM_TYPE_VALIDATORS[cls.__name__]:
+        return
+    if index == -1:
+        _CUSTOM_TYPE_VALIDATORS[cls.__name__].append(validator)
+    else:
+        _CUSTOM_TYPE_VALIDATORS[cls.__name__].insert(index, validator)
+
+
+def get_validator_for_fhir_type(
+    type_name_or_model_name: str, default: Union[None, list] = None
+):
+    global _CUSTOM_TYPE_VALIDATORS
+    try:
+        cls = globals()[type_name_or_model_name]
+    except KeyError:
+        cls = get_fhir_type_class(type_name_or_model_name)
+    return _CUSTOM_TYPE_VALIDATORS.get(cls.__name__, default)
+
+
+def get_fhir_type_class(model_name):
+    try:
+        return globals()[model_name + "Type"]
+    except KeyError:
+        raise LookupError(f"'{__name__}.{model_name}Type' doesnt found.")
 
 
 def run_validator_for_fhir_type(type_name, v):
@@ -251,10 +289,8 @@ def run_validator_for_fhir_type(type_name, v):
         v = func(cls, v)
     return v
 
-################
 
-
-class BaseType(dict):
+class AbstractType(dict):
     """ """
     __resource_type__ = ...
 
@@ -264,7 +300,23 @@ class BaseType(dict):
 
     @classmethod
     def __get_validators__(cls) -> "CallableGenerator":
-        yield BaseType.validate
+        yield fhir_model_validator
+        if get_validator_for_fhir_type(cls.__name__, None):
+            yield from get_validator_for_fhir_type(cls.__name__)
+
+
+class AbstractBaseType(dict):
+    """ """
+
+    __resource_type__ = ...
+
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        field_schema.update(type=cls.__resource_type__)
+
+    @classmethod
+    def __get_validators__(cls) -> "CallableGenerator":
+        yield AbstractBaseType.validate
 
     @classmethod
     def validate(cls, v):
@@ -278,20 +330,22 @@ class BaseType(dict):
             resource_type = v.get("resourceType", None)
 
         if resource_type is None:
-            raise ValueError("'resourceType' is required, when generic ElementType is used")
+            raise ValueError(
+                "'resourceType' is required, when generic ElementType is used"
+            )
         if resource_type == cls.__resource_type__:
-            v = fhir_model_validator(resource_type)(cls, v)
+            v = fhir_model_validator(cls, v)
             return v
         v = run_validator_for_fhir_type(resource_type, v)
         return v
 
 
-class ElementType(BaseType):
+class ElementType(AbstractBaseType):
     __resource_type__ = "Element"
 
 
-class ResourceType(BaseType):
+class ResourceType(AbstractBaseType):
     __resource_type__ = "Resource"
 
-
+# ****************** Generated FHIR Model Types *********************
 
