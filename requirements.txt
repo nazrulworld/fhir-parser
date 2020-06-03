@@ -5,3 +5,4 @@ colorlog==2.10.0
 setuptools
 click
 fhirspec
+pydantic

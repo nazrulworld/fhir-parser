@@ -89,8 +89,32 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                         )
                     )
                 continue
-
+            if profile.name == "Patient":
+                breakpoint()
             imports = profile.needed_external_classes()
+            has_fhir_primitive: bool = False
+            for cls in imports:
+                if cls.is_fhir_primitive:
+                    has_fhir_primitive = True
+                    break
+            has_array_type = False
+            _break = False
+            for klass in classes:
+                for prop in klass.properties:
+                    if prop.is_array:
+                        has_array_type = True
+                        _break = True
+                        break
+                if _break is True:
+                    break
+                if klass.superclass and klass.superclass.properties:
+                    for prop in klass.superclass.properties:
+                        if prop.is_array:
+                            has_array_type = True
+                            _break = True
+                            break
+                if _break is True:
+                    break
 
             data = {
                 "profile": profile,
@@ -98,6 +122,8 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                 "info": self.spec.info,
                 "imports": imports,
                 "classes": classes,
+                "has_fhir_primitive": has_fhir_primitive,
+                "has_array_type": has_array_type
             }
             ptrn = (
                 profile.targetname.lower()

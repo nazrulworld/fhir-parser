@@ -1,23 +1,43 @@
 # _*_ coding: utf-8 _*_
 from __future__ import annotations
+from .fhirtypesvalidators import fhir_model_validator
+from .fhirabstractmodel import FHIRAbstractModel
+from pydantic.main import load_str_bytes
 from pydantic.types import ConstrainedBytes
 from pydantic.types import ConstrainedStr
 from pydantic import AnyUrl
 from pydantic.errors import StrRegexError
 from pydantic.types import ConstrainedDecimal
 from pydantic.types import ConstrainedInt
+from pydantic.class_validators import make_generic_validator
+from typing import TYPE_CHECKING
 from uuid import UUID
 import datetime
+from typing import Dict
+from typing import Any
+from pydantic.validators import bool_validator
 
 import re
 
 __author__ = "Md Nazrul Islam<email2nazrul@gmail.com>"
 
+if TYPE_CHECKING:
+    Boolean = bool
+else:
 
-class Boolean(bool):
-    """true | false"""
-    regex: str = "true|false"
-    __visit_name__ = "boolean"
+    class Boolean(int):
+        """true | false"""
+
+        regex: str = "true|false"
+        __visit_name__ = "boolean"
+
+        @classmethod
+        def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+            field_schema.update(type="boolean")
+
+        @classmethod
+        def __get_validators__(cls) -> "CallableGenerator":
+            yield bool_validator
 
 
 class String(ConstrainedStr):
@@ -29,12 +49,14 @@ class String(ConstrainedStr):
     the XML format. Note: This means that a string that consists only of whitespace
     could be trimmed to nothing, which would be treated as an invalid element value.
     Therefore strings SHOULD always contain non-whitespace conten"""
+
     regex = re.compile("[ \r\n\t\S]+")
     __visit_name__ = "string"
 
 
 class Base64Binary(ConstrainedBytes):
     """A stream of bytes, base64 encoded (RFC 4648 )"""
+
     regex = re.compile(b"(\s*([0-9a-zA-Z\+\=]){4}\s*)+")
     __visit_name__ = "base64Binary"
 
@@ -56,6 +78,7 @@ class Code(ConstrainedStr):
     Technically, a code is restricted to a string which has at least one
     character and no leading or trailing whitespace, and where there is
     no whitespace other than single spaces in the contents"""
+
     regex = re.compile("[^\s]+(\s[^\s]+)*")
     __visit_name__ = "code"
 
@@ -66,6 +89,7 @@ class Id(ConstrainedStr):
     (This might be an integer, an un-prefixed OID, UUID or any other identifier
     pattern that meets these constraints.)
     """
+
     regex = re.compile("[A-Za-z0-9\-\.]{1,64}")
     min_length = 1
     max_length = 64
@@ -75,6 +99,7 @@ class Id(ConstrainedStr):
 class Decimal(ConstrainedDecimal):
     """Rational numbers that have a decimal representation.
     See below about the precision of the number"""
+
     regex = re.compile("-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?")
     __visit_name__ = "decimal"
 
@@ -82,12 +107,14 @@ class Decimal(ConstrainedDecimal):
 class Integer(ConstrainedInt):
     """A signed integer in the range −2,147,483,648..2,147,483,647 (32-bit;
     for larger values, use decimal)"""
+
     regex = re.compile("[0]|[-+]?[1-9][0-9]*")
     __visit_name__ = "integer"
 
 
 class UnsignedInt(ConstrainedInt):
     """Any non-negative integer in the range 0..2,147,483,647"""
+
     regex = re.compile("[0]|([1-9][0-9]*)")
     __visit_name__ = "unsignedInt"
     ge = 0
@@ -95,6 +122,7 @@ class UnsignedInt(ConstrainedInt):
 
 class PositiveInt(ConstrainedInt):
     """Any positive integer in the range 1..2,147,483,647"""
+
     regex = re.compile("\+?[1-9][0-9]*")
     __visit_name__ = "positiveInt"
     gt = 0
@@ -113,6 +141,7 @@ class Oid(ConstrainedStr):
 class Uuid(UUID):
     """A UUID (aka GUID) represented as a URI (RFC 4122 );
     e.g. urn:uuid:c757873d-ec9a-4326-a141-556f43239520"""
+
     __visit_name__ = "uuid"
     regex = None
 
@@ -129,6 +158,7 @@ class Url(AnyUrl):
 class Markdown(ConstrainedStr):
     """A FHIR string (see above) that may contain markdown syntax for optional processing
     by a markdown presentation engine, in the GFM extension of CommonMark format (see below)"""
+
     __visit_name__ = "markdown"
     regex = re.compile("\s*(\S|\s)*")
 
@@ -143,6 +173,7 @@ class Date(datetime.date):
     as used in human communication. The format is YYYY, YYYY-MM, or YYYY-MM-DD,
     e.g. 2018, 1973-06, or 1905-08-23.
     There SHALL be no time zone. Dates SHALL be valid dates"""
+
     regex = re.compile(
         "([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|"
         "[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2]"
@@ -161,6 +192,7 @@ class DateTime(datetime.datetime):
     zero-filled and may be ignored at receiver discretion.
     Dates SHALL be valid dates. The time "24:00" is not allowed.
     Leap Seconds are allowed - see below"""
+
     regex = re.compile(
         "([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|"
         "[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|"
@@ -181,6 +213,7 @@ class Instant(datetime.datetime):
     but is not required to be). instant is a more constrained dateTime
 
     Note: This type is for system times, not human times (see date and dateTime below)."""
+
     regex = re.compile(
         "([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|"
         "[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|"
@@ -198,5 +231,67 @@ class Time(datetime.time):
     be ignored at receiver discretion.
     The time "24:00" SHALL NOT be used. A time zone SHALL NOT be present.
     Times can be converted to a Duration since midnight."""
+
     regex = re.compile("([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?")
     __visit_name__ = "time"
+
+
+def get_fhir_type_class(type_name):
+    try:
+        return globals()[type_name + "Type"]
+    except KeyError:
+        raise LookupError(f"'{__name__}.{type_name}Type' doesnt found.")
+
+
+def run_validator_for_fhir_type(type_name, v):
+    """ """
+    cls = get_fhir_type_class(type_name)
+    for validator in cls.__get_validators__:
+        func = make_generic_validator(validator)
+        v = func(cls, v)
+    return v
+
+################
+
+
+class BaseType(dict):
+    """ """
+    __resource_type__ = ...
+
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        field_schema.update(type=cls.__resource_type__)
+
+    @classmethod
+    def __get_validators__(cls) -> "CallableGenerator":
+        yield BaseType.validate
+
+    @classmethod
+    def validate(cls, v):
+        """ """
+        if isinstance(v, (bytes, str)):
+            input_data = load_str_bytes(v)
+            resource_type = input_data.get("resourceType", None)
+        elif isinstance(v, FHIRAbstractModel):
+            resource_type = v.resourceType
+        else:
+            resource_type = v.get("resourceType", None)
+
+        if resource_type is None:
+            raise ValueError("'resourceType' is required, when generic ElementType is used")
+        if resource_type == cls.__resource_type__:
+            v = fhir_model_validator(resource_type)(cls, v)
+            return v
+        v = run_validator_for_fhir_type(resource_type, v)
+        return v
+
+
+class ElementType(BaseType):
+    __resource_type__ = "Element"
+
+
+class ResourceType(BaseType):
+    __resource_type__ = "Resource"
+
+
+
