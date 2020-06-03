@@ -6,10 +6,19 @@ import os
 import re
 import shutil
 import textwrap
+from fhirspec import FHIR_CLASS_TYPES
+from fhirspec import FHIRClass
 
 from jinja2 import Environment, PackageLoader, TemplateNotFound
 from jinja2.filters import environmentfilter
 from logger import logger
+import io
+
+
+def include_file(file_location):
+    """ """
+    with io.open(file_location, "r") as fp:
+        return fp.read()
 
 
 class FHIRRenderer(object):
@@ -76,6 +85,24 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                 )
                 shutil.copyfile(filepath, tgt)
 
+    def render_validators(self):
+        """ """
+        for profile in self.spec.writable_profiles():
+            profile.writable_classes()
+        all_classes = [
+            cls
+            for cls in FHIRClass.known.values()
+            if cls.class_type
+            in (
+                FHIR_CLASS_TYPES.resource,
+                FHIR_CLASS_TYPES.complex_type,
+                FHIR_CLASS_TYPES.logical,
+            )
+        ]
+        all_classes = sorted(all_classes, key=lambda x: x.name)
+        target_path = self.settings.RESOURCE_TARGET_DIRECTORY / "fhirtypesvalidators.py"
+        self.do_render({"classes": all_classes}, "fhirtypesvalidators.jinja2", target_path)
+
     def render(self):
         for profile in self.spec.writable_profiles():
             classes = sorted(profile.writable_classes(), key=lambda x: x.name)
@@ -89,32 +116,27 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                         )
                     )
                 continue
-            if profile.name == "Patient":
-                breakpoint()
+
             imports = profile.needed_external_classes()
-            has_fhir_primitive: bool = False
-            for cls in imports:
-                if cls.is_fhir_primitive:
-                    has_fhir_primitive = True
-                    break
+            need_fhirtypes: bool = False
             has_array_type = False
-            _break = False
             for klass in classes:
                 for prop in klass.properties:
-                    if prop.is_array:
+                    if not prop.is_native and need_fhirtypes is False:
+                        need_fhirtypes = True
+                    if prop.is_array and has_array_type is False:
                         has_array_type = True
-                        _break = True
-                        break
-                if _break is True:
-                    break
-                if klass.superclass and klass.superclass.properties:
-                    for prop in klass.superclass.properties:
-                        if prop.is_array:
-                            has_array_type = True
-                            _break = True
-                            break
-                if _break is True:
-                    break
+
+                    klass = FHIRClass.with_name(prop.class_name)
+                    if klass.class_type in (
+                        FHIR_CLASS_TYPES.resource,
+                        FHIR_CLASS_TYPES.logical,
+                        FHIR_CLASS_TYPES.complex_type,
+                    ):
+                        prop.field_type = prop.class_name + "Type"
+
+                    if klass.class_type != FHIR_CLASS_TYPES.other:
+                        prop.field_type_module = "fhirtypes"
 
             data = {
                 "profile": profile,
@@ -122,8 +144,9 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                 "info": self.spec.info,
                 "imports": imports,
                 "classes": classes,
-                "has_fhir_primitive": has_fhir_primitive,
-                "has_array_type": has_array_type
+                "need_fhirtypes": need_fhirtypes,
+                "has_array_type": has_array_type,
+                "fhir_class_types": FHIR_CLASS_TYPES,
             }
             ptrn = (
                 profile.targetname.lower()
@@ -136,6 +159,7 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
             self.do_render(data, source_path, target_path)
 
         self.copy_files(target_path.parent)
+        self.render_validators()
 
 
 class FHIRFactoryRenderer(FHIRRenderer):
@@ -221,7 +245,7 @@ class FHIRUnitTestRenderer(FHIRRenderer):
                 "class": coll.klass,
                 "tests": coll.tests,
                 "profile": self.spec.profiles[coll.klass.name.lower()],
-                "release_name": self.settings.CURRENT_RELEASE_NAME
+                "release_name": self.settings.CURRENT_RELEASE_NAME,
             }
 
             file_pattern = coll.klass.name

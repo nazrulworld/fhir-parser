@@ -1,0 +1,8 @@
+{% include "fhirtypes.py" %}
+{%- for klass in classes %}
+{% if klass.name not in ("Element", "Resource") %}
+class {{ klass.name }}Type(AbstractType):
+    __resource_type__ = "{{ klass.name }}"
+
+{% endif -%}
+{% endfor %}
