@@ -1,6 +1,5 @@
 # _*_ coding: utf-8 _*_
 from __future__ import annotations
-from .fhirtypesvalidators import fhir_model_validator
 from .fhirabstractmodel import FHIRAbstractModel
 from pydantic.main import load_str_bytes
 from pydantic.types import ConstrainedBytes
@@ -286,12 +285,13 @@ def run_validator_for_fhir_type(type_name, v):
     cls = get_fhir_type_class(type_name)
     for validator in cls.__get_validators__:
         func = make_generic_validator(validator)
-        v = func(cls, v)
+        v = func(v)
     return v
 
 
 class AbstractType(dict):
     """ """
+
     __resource_type__ = ...
 
     @classmethod
@@ -300,7 +300,9 @@ class AbstractType(dict):
 
     @classmethod
     def __get_validators__(cls) -> "CallableGenerator":
-        yield fhir_model_validator
+        from . import fhirtypesvalidators
+
+        yield getattr(fhirtypesvalidators, cls.__resource_type__.lower() + "_validator")
         if get_validator_for_fhir_type(cls.__name__, None):
             yield from get_validator_for_fhir_type(cls.__name__)
 
@@ -334,7 +336,11 @@ class AbstractBaseType(dict):
                 "'resourceType' is required, when generic ElementType is used"
             )
         if resource_type == cls.__resource_type__:
-            v = fhir_model_validator(cls, v)
+            from . import fhirtypesvalidators
+
+            v = getattr(
+                fhirtypesvalidators, cls.__resource_type__.lower() + "_validator"
+            )(v)
             return v
         v = run_validator_for_fhir_type(resource_type, v)
         return v
@@ -347,5 +353,5 @@ class ElementType(AbstractBaseType):
 class ResourceType(AbstractBaseType):
     __resource_type__ = "Resource"
 
-# ****************** Generated FHIR Model Types *********************
 
+# ****************** Generated FHIR Model Types *********************

@@ -103,6 +103,25 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
         target_path = self.settings.RESOURCE_TARGET_DIRECTORY / "fhirtypesvalidators.py"
         self.do_render({"classes": all_classes}, "fhirtypesvalidators.jinja2", target_path)
 
+    def render_fhir_types(self):
+        """ """
+        for profile in self.spec.writable_profiles():
+            profile.writable_classes()
+        all_classes = [
+            cls
+            for cls in FHIRClass.known.values()
+            if cls.class_type
+            in (
+                FHIR_CLASS_TYPES.resource,
+                FHIR_CLASS_TYPES.complex_type,
+                FHIR_CLASS_TYPES.logical,
+            )
+        ]
+        all_classes = sorted(all_classes, key=lambda x: x.name)
+        target_path = self.settings.RESOURCE_TARGET_DIRECTORY / "fhirtypes.py"
+        self.do_render({"classes": all_classes}, "fhirtypes.jinja2", target_path)
+
+
     def render(self):
         for profile in self.spec.writable_profiles():
             classes = sorted(profile.writable_classes(), key=lambda x: x.name)
@@ -160,6 +179,7 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
 
         self.copy_files(target_path.parent)
         self.render_validators()
+        self.render_fhir_types()
 
 
 class FHIRFactoryRenderer(FHIRRenderer):
