@@ -53,6 +53,10 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
 		alias="{{ prop.orig_name }}",
 		title={{ title|trim|replace("\n", "")|tojson }},
 		description={{ prop.short|tojson }},
+        {%- if prop.one_of_many%}
+		one_of_many="{{ prop.one_of_many }}", # Choice of Data Types. i.e value[x]
+		one_of_many_required={% if prop.nonoptional %}True{% else %}False{% endif %}
+        {% endif -%}
 	)
 
 {%- endfor %}

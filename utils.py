@@ -103,10 +103,6 @@ class ResourceWriter(FHIRSpecWriter):
             vsrenderer = fhirrenderer.FHIRValueSetRenderer(self.spec, self.settings)
             vsrenderer.render()
 
-        if self.settings.WRITE_FACTORY:
-            renderer = fhirrenderer.FHIRFactoryRenderer(self.spec, self.settings)
-            renderer.render()
-
         if self.settings.WRITE_DEPENDENCIES:
             renderer = fhirrenderer.FHIRDependencyRenderer(self.spec, self.settings)
             renderer.render()

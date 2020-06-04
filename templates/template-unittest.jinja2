@@ -16,6 +16,9 @@ import pytest
 import io
 import unittest
 import json
+from pydantic.validators import parse_datetime
+from pydantic.validators import parse_date
+from pydantic.validators import parse_time
 
 from .fixtures import force_bytes
 from .. import {{ class.module }}
@@ -54,11 +57,15 @@ class {{ class.name }}Tests(unittest.TestCase):
         {%- else %}
         self.assertFalse(inst.{{ onetest.path }})
         {%- endif %}
-    {%- else %}{% if onetest.klass.name in ("Date", "DateTime", "Instant", "Time") %}
-        self.assertEqual(inst.{{ onetest.path }}.isoformat(), "{{ onetest.value }}")
+    {%- else %}{% if onetest.klass.name in ("DateTime", "Instant") %}
+        self.assertEqual(inst.{{ onetest.path }}, parse_datetime("{{ onetest.value }}"))
+	{%- else %}{% if onetest.klass.name in ("Date",) %}
+        self.assertEqual(inst.{{ onetest.path }}, parse_date("{{ onetest.value }}"))
+	{%- else %}{% if onetest.klass.name in ("Time",) %}
+        self.assertEqual(inst.{{ onetest.path }}, parse_time("{{ onetest.value }}"))
     {%- else %}
         # Don't know how to create unit test for "{{ onetest.path }}", which is a {{ onetest.klass.name }}
-    {%- endif %}{% endif %}{% endif %}{% endif %}
+    {%- endif %}{% endif %}{% endif %}{% endif %}{% endif %}{% endif %}
     {%- endfor %}
 {%- endfor %}
 

@@ -182,26 +182,6 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
         self.render_fhir_types()
 
 
-class FHIRFactoryRenderer(FHIRRenderer):
-    """ Write factories for FHIR classes.
-    """
-
-    def render(self):
-        classes = []
-        for profile in self.spec.writable_profiles():
-            classes.extend(profile.writable_classes())
-
-        data = {
-            "info": self.spec.info,
-            "classes": sorted(classes, key=lambda x: x.name),
-        }
-        self.do_render(
-            data,
-            self.settings.FACTORY_SOURCE_TEMPLATE,
-            self.settings.FACTORY_TARGET_NAME,
-        )
-
-
 class FHIRDependencyRenderer(FHIRRenderer):
     """ Puts down dependencies for each of the FHIR resources. Per resource
     class will grab all class/resource names that are needed for its

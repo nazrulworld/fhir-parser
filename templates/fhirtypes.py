@@ -65,17 +65,6 @@ class Base64Binary(ConstrainedBytes):
     regex = re.compile(b"(\s*([0-9a-zA-Z\+\=]){4}\s*)+")
     __visit_name__ = "base64Binary"
 
-    @classmethod
-    def __get_validators__(cls) -> "CallableGenerator":
-        yield from ConstrainedBytes.__get_validators__()
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: bytes) -> bytes:
-        if cls.regex.match(value):
-            return value
-        raise StrRegexError(pattern=cls.regex.pattern)
-
 
 class Code(ConstrainedStr):
     """Indicates that the value is taken from a set of controlled
