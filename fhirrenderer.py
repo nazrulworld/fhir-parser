@@ -138,7 +138,9 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
 
             imports = profile.needed_external_classes()
             need_fhirtypes: bool = False
+            has_one_of_many = False
             has_array_type = False
+            one_of_many_fields = dict()
             for klass in classes:
                 for prop in klass.properties:
                     if not prop.is_native and need_fhirtypes is False:
@@ -146,17 +148,25 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                     if prop.is_array and has_array_type is False:
                         has_array_type = True
 
-                    klass = FHIRClass.with_name(prop.class_name)
-                    if klass.class_type in (
+                    prop_klass = FHIRClass.with_name(prop.class_name)
+                    if prop_klass.class_type in (
                         FHIR_CLASS_TYPES.resource,
                         FHIR_CLASS_TYPES.logical,
                         FHIR_CLASS_TYPES.complex_type,
                     ):
                         prop.field_type = prop.class_name + "Type"
 
-                    if klass.class_type != FHIR_CLASS_TYPES.other:
+                    if prop_klass.class_type != FHIR_CLASS_TYPES.other:
                         prop.field_type_module = "fhirtypes"
-
+                    # check for one_of_many
+                    if prop.one_of_many:
+                        if has_one_of_many is False:
+                            has_one_of_many = True
+                        if klass.name not in one_of_many_fields:
+                            one_of_many_fields[klass.name] = {prop.one_of_many: []}
+                        if prop.one_of_many not in one_of_many_fields[klass.name]:
+                            one_of_many_fields[klass.name][prop.one_of_many] = []
+                        one_of_many_fields[klass.name][prop.one_of_many].append(prop.name)
             data = {
                 "profile": profile,
                 "release_name": self.spec.settings.CURRENT_RELEASE_NAME,
@@ -166,6 +176,8 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                 "need_fhirtypes": need_fhirtypes,
                 "has_array_type": has_array_type,
                 "fhir_class_types": FHIR_CLASS_TYPES,
+                "one_of_many_fields": one_of_many_fields,
+                "has_one_of_many": has_one_of_many
             }
             ptrn = (
                 profile.targetname.lower()

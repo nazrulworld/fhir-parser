@@ -269,12 +269,12 @@ def get_fhir_type_class(model_name):
         raise LookupError(f"'{__name__}.{model_name}Type' doesnt found.")
 
 
-def run_validator_for_fhir_type(type_name, v):
+def run_validator_for_fhir_type(type_name, v, values, config, field):
     """ """
     cls = get_fhir_type_class(type_name)
-    for validator in cls.__get_validators__:
+    for validator in cls.__get_validators__():
         func = make_generic_validator(validator)
-        v = func(v)
+        v = func(cls, v, values, config, field)
     return v
 
 
@@ -310,7 +310,7 @@ class AbstractBaseType(dict):
         yield AbstractBaseType.validate
 
     @classmethod
-    def validate(cls, v):
+    def validate(cls, v, values, config, field):
         """ """
         if isinstance(v, (bytes, str)):
             input_data = load_str_bytes(v)
@@ -331,7 +331,7 @@ class AbstractBaseType(dict):
                 fhirtypesvalidators, cls.__resource_type__.lower() + "_validator"
             )(v)
             return v
-        v = run_validator_for_fhir_type(resource_type, v)
+        v = run_validator_for_fhir_type(resource_type, v, values, config, field)
         return v
 
 

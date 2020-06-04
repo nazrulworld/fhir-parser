@@ -14,6 +14,12 @@ Last updated: {{ profile.fhir_last_updated }}
 from typing import List
 {% endif %}
 from pydantic import Field
+{%- if has_one_of_many %}
+from pydantic import root_validator
+from typing import Dict
+from typing import Type
+from typing import Any
+{% endif %}
 {%- if need_fhirtypes %}
 from . import fhirtypes
 {% endif %}
@@ -49,7 +55,7 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
 		{%- if prop.json_class != prop.class_name %} (represented as `{{ prop.json_class }}` in JSON){% endif %}
 	{% endset %}
     {{ prop.name }}: {{ type_klass }} = Field(
-		{% if prop.nonoptional %}...{% else %}None{% endif %},
+		{% if prop.nonoptional and not prop.one_of_many %}...{% else %}None{% endif %},
 		alias="{{ prop.orig_name }}",
 		title={{ title|trim|replace("\n", "")|tojson }},
 		description={{ prop.short|tojson }},
@@ -60,6 +66,52 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
 	)
 
 {%- endfor %}
+{% if klass.name in one_of_many_fields %}
+    @root_validator(pre=True)
+    def validate_one_of_many(
+        cls: Type['{{ klass.name }}'], values: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """https://www.hl7.org/fhir/formats.html#choice
+        A few elements have a choice of more than one data type for their content.
+        All such elements have a name that takes the form nnn[x].
+        The "nnn" part of the name is constant, and the "[x]" is replaced with
+        the title-cased name of the type that is actually used.
+        The table view shows each of these names explicitly.
 
+        Elements that have a choice of data type cannot repeat - they must have a
+        maximum cardinality of 1. When constructing an instance of an element with a
+        choice of types, the authoring system must create a single element with a
+        data type chosen from among the list of permitted data types.
+        """
+        one_of_many_fields = {
+	        {%- for prefix in one_of_many_fields[klass.name] %}
+			"{{ prefix }}": [
+				{%- for field in one_of_many_fields[klass.name][prefix] %}
+			    "{{ field }}",
+				{% endfor -%}
+		    ],
+	        {% endfor -%}
+	    }
+        for prefix, fields in one_of_many_fields.items():
+            assert cls.__fields__[fields[0]].field_info.extra["one_of_many"] == prefix
+            required = (
+                cls.__fields__[fields[0]].field_info.extra["one_of_many_required"]
+                is True
+            )
+            found = False
+            for field in fields:
+                if field in values and values[field] is not None:
+                    if found is True:
+                        raise ValueError(
+                            "Any of one field value is expected from "
+                            f"{fields}, but got multiple!"
+                        )
+                    else:
+                        found = True
+            if required is True and found is False:
+                raise ValueError(f"Expect any of field value from this list {values}.")
+
+        return values
+{% endif -%}
 {%- endfor %}
 
