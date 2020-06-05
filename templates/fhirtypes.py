@@ -1,25 +1,22 @@
 # _*_ coding: utf-8 _*_
-from __future__ import annotations
-from .fhirabstractmodel import FHIRAbstractModel
-from pydantic.main import load_str_bytes
-from pydantic.types import ConstrainedBytes
-from pydantic.types import ConstrainedStr
-from pydantic import AnyUrl
-from pydantic.errors import StrRegexError
-from pydantic.types import ConstrainedDecimal
-from pydantic.types import ConstrainedInt
-from pydantic.typing import AnyCallable
-from typing import Union
-from typing import List
-from pydantic.class_validators import make_generic_validator
-from typing import TYPE_CHECKING
-from uuid import UUID
 import datetime
-from typing import Dict
-from typing import Any
+import re
+from typing import TYPE_CHECKING, Any, Dict, List, Union
+from uuid import UUID
+
+from pydantic import AnyUrl
+from pydantic.main import load_str_bytes
+from pydantic.types import (
+    ConstrainedBytes,
+    ConstrainedDecimal,
+    ConstrainedInt,
+    ConstrainedStr,
+)
+from pydantic.typing import AnyCallable
 from pydantic.validators import bool_validator
 
-import re
+from .fhirabstractmodel import FHIRAbstractModel
+from .fhirtypesvalidators import run_validator_for_fhir_type
 
 __author__ = "Md Nazrul Islam<email2nazrul@gmail.com>"
 
@@ -269,15 +266,6 @@ def get_fhir_type_class(model_name):
         raise LookupError(f"'{__name__}.{model_name}Type' doesnt found.")
 
 
-def run_validator_for_fhir_type(type_name, v, values, config, field):
-    """ """
-    cls = get_fhir_type_class(type_name)
-    for validator in cls.__get_validators__():
-        func = make_generic_validator(validator)
-        v = func(cls, v, values, config, field)
-    return v
-
-
 class AbstractType(dict):
     """ """
 
@@ -307,7 +295,7 @@ class AbstractBaseType(dict):
 
     @classmethod
     def __get_validators__(cls) -> "CallableGenerator":
-        yield AbstractBaseType.validate
+        yield cls.validate
 
     @classmethod
     def validate(cls, v, values, config, field):
@@ -331,16 +319,18 @@ class AbstractBaseType(dict):
                 fhirtypesvalidators, cls.__resource_type__.lower() + "_validator"
             )(v)
             return v
-        v = run_validator_for_fhir_type(resource_type, v, values, config, field)
+        type_class = get_fhir_type_class(resource_type)
+        v = run_validator_for_fhir_type(type_class, v, values, config, field)
         return v
 
 
 class ElementType(AbstractBaseType):
+    """ """
+
     __resource_type__ = "Element"
 
 
 class ResourceType(AbstractBaseType):
+    """ """
+
     __resource_type__ = "Resource"
-
-
-# ****************** Generated FHIR Model Types *********************

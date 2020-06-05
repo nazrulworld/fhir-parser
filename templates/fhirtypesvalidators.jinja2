@@ -3,7 +3,10 @@
 import importlib
 from pathlib import Path
 from typing import Union
+
+from pydantic.class_validators import make_generic_validator
 from pydantic.types import StrBytes
+
 from .fhirabstractmodel import FHIRAbstractModel
 
 __author__ = "Md Nazrul Islam<email2nazrul@gmail.com>"
@@ -26,6 +29,13 @@ def get_fhir_model_class(model_name: str) -> FHIRAbstractModel:
     MODEL_CLASSES[model_name] = (klass, module_name)
     return klass
 
+def run_validator_for_fhir_type(model_type_cls, v, values, config, field):
+    """ """
+    cls = get_fhir_model_class(model_type_cls.__resource_type__)
+    for validator in model_type_cls.__get_validators__():
+        func = make_generic_validator(validator)
+        v = func(cls, v, values, config, field)
+    return v
 
 def fhir_model_validator(model_name: str, v: Union[StrBytes, dict, Path, FHIRAbstractModel]):
     """ """
