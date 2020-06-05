@@ -19,54 +19,62 @@ import json
 from pydantic.validators import parse_datetime
 from pydantic.validators import parse_date
 from pydantic.validators import parse_time
+from pydantic import ValidationError
 
 from .fixtures import force_bytes
 from .. import {{ class.module }}
 
+def instantiate_from_file(filename):
+    """ """
+    datadir = os.environ.get('FHIR_UNITTEST_DATADIR') or ''
+    filelocation = os.path.join(datadir, filename)
+    with io.open(filelocation, 'r') as handle:
+        js = json.load(handle)
+        assert "{{ class.name }}" == js["resourceType"]
+    try:
+        instance = {{ class.module }}.{{ class.name }}(**js)
+    except ValidationError as exc:
+        # with open("errors_file.txt", "a") as fp:
+        #    fp.write(filename+"\n")
+        raise
+    return instance
 
-@pytest.mark.usefixtures("base_settings")
-class {{ class.name }}Tests(unittest.TestCase):
-    def instantiate_from(self, filename):
-        datadir = os.environ.get('FHIR_UNITTEST_DATADIR') or ''
-        with io.open(os.path.join(datadir, filename), 'r') as handle:
-            js = json.load(handle)
-            self.assertEqual("{{ class.name }}", js["resourceType"])
-        return {{ class.module }}.{{ class.name }}(**js)
 
 {%- for tcase in tests %}
 
-    def test{{ class.name }}{{ loop.index }}(self):
-        inst = self.instantiate_from("{{ tcase.filename }}")
-        self.assertIsNotNone(inst, "Must have instantiated a {{ class.name }} instance")
-        self.impl{{ class.name }}{{ loop.index }}(inst)
+def impl_{{ class.name | lower }}_{{ loop.index }}(inst):
+{%- for onetest in tcase.tests %}
+{%- if onetest.klass.name in ("String", "Code", "Id", "Uri", "Oid", "Xhtml") %}
+	assert force_bytes(inst.{{ onetest.path }}) == force_bytes("{{ onetest.value | replace('"', '\\"') | replace('\\n', '\\\\n') }}")
+{%- else %}{% if "Decimal" == onetest.klass.name or "Integer" == onetest.klass.name or "NSDecimalNumber" == onetest.klass.name %}
+	assert inst.{{ onetest.path }} == {{ onetest.value }}
+{%- else %}{% if "bool" == onetest.klass.name %}
+	{%- if onetest.value %}
+	assert inst.{{ onetest.path }} is True
+	{%- else %}
+	assert inst.{{ onetest.path }} is False
+	{%- endif %}
+{%- else %}{% if onetest.klass.name in ("DateTime", "Instant") %}
+	assert inst.{{ onetest.path }} == parse_datetime("{{ onetest.value }}")
+{%- else %}{% if onetest.klass.name in ("Date",) %}
+	assert inst.{{ onetest.path }} == parse_date("{{ onetest.value }}")
+{%- else %}{% if onetest.klass.name in ("Time",) %}
+	assert inst.{{ onetest.path }} == parse_time("{{ onetest.value }}")
+{%- else %}
+	# Don't know how to create unit test for "{{ onetest.path }}", which is a {{ onetest.klass.name }}
+{%- endif %}{% endif %}{% endif %}{% endif %}{% endif %}{% endif %}
+{%- endfor %}
 
-        js = inst.dict()
-        self.assertEqual("{{ class.name }}", js["resourceType"])
-        inst2 = {{ class.module }}.{{ class.name }}(**js)
-        self.impl{{ class.name }}{{ loop.index }}(inst2)
+def test_{{ class.name | lower}}_{{ loop.index }}(base_settings):
+	inst = instantiate_from_file("{{ tcase.filename }}")
+	assert inst is not None, "Must have instantiated a {{ class.name }} instance"
+	impl_{{ class.name | lower }}_{{ loop.index }}(inst)
 
-    def impl{{ class.name }}{{ loop.index }}(self, inst):
-    {%- for onetest in tcase.tests %}
-    {%- if onetest.klass.name in ("String", "Code", "Id", "Uri", "Oid", "Xhtml") %}
-        self.assertEqual(force_bytes(inst.{{ onetest.path }}), force_bytes("{{ onetest.value | replace('"', '\\"') | replace('\\n', '\\\\n') }}"))
-    {%- else %}{% if "Decimal" == onetest.klass.name or "Integer" == onetest.klass.name or "NSDecimalNumber" == onetest.klass.name %}
-        self.assertEqual(inst.{{ onetest.path }}, {{ onetest.value }})
-    {%- else %}{% if "bool" == onetest.klass.name %}
-        {%- if onetest.value %}
-        self.assertTrue(inst.{{ onetest.path }})
-        {%- else %}
-        self.assertFalse(inst.{{ onetest.path }})
-        {%- endif %}
-    {%- else %}{% if onetest.klass.name in ("DateTime", "Instant") %}
-        self.assertEqual(inst.{{ onetest.path }}, parse_datetime("{{ onetest.value }}"))
-	{%- else %}{% if onetest.klass.name in ("Date",) %}
-        self.assertEqual(inst.{{ onetest.path }}, parse_date("{{ onetest.value }}"))
-	{%- else %}{% if onetest.klass.name in ("Time",) %}
-        self.assertEqual(inst.{{ onetest.path }}, parse_time("{{ onetest.value }}"))
-    {%- else %}
-        # Don't know how to create unit test for "{{ onetest.path }}", which is a {{ onetest.klass.name }}
-    {%- endif %}{% endif %}{% endif %}{% endif %}{% endif %}{% endif %}
-    {%- endfor %}
+	js = inst.dict()
+	assert "{{ class.name }}" == js["resourceType"]
+	inst2 = {{ class.module }}.{{ class.name }}(**js)
+	impl_{{ class.name | lower }}_{{ loop.index }}(inst2)
+
 {%- endfor %}
 
 
