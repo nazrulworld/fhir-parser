@@ -3,7 +3,9 @@
 import importlib
 from pathlib import Path
 from typing import Union
+
 from pydantic.types import StrBytes
+
 from .fhirabstractmodel import FHIRAbstractModel
 
 __author__ = "Md Nazrul Islam<email2nazrul@gmail.com>"
@@ -36,4 +38,3 @@ def fhir_model_validator(model_name: str, v: Union[StrBytes, dict, FHIRAbstractM
     if model_class.resourceType != v.resourceType:
         raise ValueError
     return v
-

@@ -2,14 +2,11 @@
 """Base class for all FHIR elements. """
 import abc
 import logging
-from typing import Callable
-from typing import Any
-from typing import Optional
-from typing import Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+
 from pydantic import BaseModel
-from pydantic.errors import ConfigError
 from pydantic.class_validators import make_generic_validator
-from typing import TYPE_CHECKING
+from pydantic.errors import ConfigError
 
 if TYPE_CHECKING:
     from pydantic.typing import AbstractSetIntStr, MappingIntStrAny, DictStrAny
@@ -86,7 +83,7 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
             by_alias = True
 
         if exclude_none is None:
-            exclude_none = True
+            exclude_none = False
 
         return BaseModel.dict(
             self,

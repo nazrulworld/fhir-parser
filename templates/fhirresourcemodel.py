@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """Base class for all FHIR elements. """
+from typing import Optional
+
 from pydantic import Field
 
 from .fhirabstractmodel import FHIRAbstractModel
 from .fhirtypes import Id
-from typing import Optional
 
 
 class FHIRResourceModel(FHIRAbstractModel):

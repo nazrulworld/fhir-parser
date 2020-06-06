@@ -6,12 +6,8 @@ from uuid import UUID
 
 from pydantic import AnyUrl
 from pydantic.main import load_str_bytes
-from pydantic.types import (
-    ConstrainedBytes,
-    ConstrainedDecimal,
-    ConstrainedInt,
-    ConstrainedStr,
-)
+from pydantic.types import (ConstrainedBytes, ConstrainedDecimal,
+                            ConstrainedInt, ConstrainedStr)
 from pydantic.typing import AnyCallable
 from pydantic.validators import bool_validator
 
