@@ -91,7 +91,7 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
             profile.writable_classes()
         all_classes = [
             cls
-            for cls in FHIRClass.known.values()
+            for cls in FHIRClass.__known_classes__.values()
             if cls.class_type
             in (
                 FHIR_CLASS_TYPES.resource,
@@ -109,7 +109,7 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
             profile.writable_classes()
         all_classes = [
             cls
-            for cls in FHIRClass.known.values()
+            for cls in FHIRClass.__known_classes__.values()
             if cls.class_type
             in (
                 FHIR_CLASS_TYPES.resource,

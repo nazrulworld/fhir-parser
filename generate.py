@@ -98,21 +98,18 @@ def main(
         originals = {
             "SPECIFICATION_URL": settings.SPECIFICATION_URL,
             "RESOURCE_TARGET_DIRECTORY": settings.RESOURCE_TARGET_DIRECTORY,
-            "FACTORY_TARGET_NAME": settings.FACTORY_TARGET_NAME,
             "UNITTEST_TARGET_DIRECTORY": settings.UNITTEST_TARGET_DIRECTORY,
             "CURRENT_RELEASE_NAME": settings.CURRENT_RELEASE_NAME
         }
         ORG_SPECIFICATION_URL = settings.SPECIFICATION_URL
         ORG_RESOURCE_TARGET_DIRECTORY = settings.RESOURCE_TARGET_DIRECTORY
-        ORG_FACTORY_TARGET_NAME = settings.FACTORY_TARGET_NAME
         ORG_UNITTEST_TARGET_DIRECTORY = settings.UNITTEST_TARGET_DIRECTORY
         for pv in previous_versions:
             # reset cache, important!
-            fhirspec.FHIRClass.known = {}
+            fhirspec.FHIRClass.__known_classes__ = {}
             customs = {
                 "SPECIFICATION_URL": "/".join([settings.FHIR_BASE_URL, pv]),
                 "RESOURCE_TARGET_DIRECTORY": originals["RESOURCE_TARGET_DIRECTORY"] / pv,
-                "FACTORY_TARGET_NAME": originals["FACTORY_TARGET_NAME"].parent / pv / originals["FACTORY_TARGET_NAME"].name,
                 "UNITTEST_TARGET_DIRECTORY": originals["UNITTEST_TARGET_DIRECTORY"].parent / pv / originals["UNITTEST_TARGET_DIRECTORY"].name,
                 "CURRENT_RELEASE_NAME": pv
             }
@@ -140,7 +137,7 @@ def main(
                     update_pytest_fixture(settings)
 
         # restore originals
-        fhirspec.FHIRClass.known = {}
+        fhirspec.FHIRClass.__known_classes__ = {}
         settings.update(originals)
         # settings["CURRENT_RELEASE_NAME"] = current_version
         # settings["SPECIFICATION_URL"] = ORG_SPECIFICATION_URL
