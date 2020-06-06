@@ -1,15 +1,15 @@
 import hashlib
 import io
 import os
+import pathlib
 import shutil
 import sys
 import tempfile
 import zipfile
+from os.path import dirname
 
 import pytest
 import six
-
-from os.path import dirname
 
 EXAMPLE_RESOURCES_URL = (
     "https://github.com/nazrulworld/fhir-parser/raw/"
@@ -91,6 +91,8 @@ def base_settings():
 
     if "FHIR_UNITTEST_DATADIR" not in os.environ:
         os.environ.setdefault("FHIR_UNITTEST_DATADIR", temp_data_dir)
+
+    settings["unittest_data_dir"] = pathlib.Path(os.environ["FHIR_UNITTEST_DATADIR"])
 
     yield settings
 

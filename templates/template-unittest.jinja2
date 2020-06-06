@@ -10,12 +10,6 @@ Revision: {{ info.revision }}
 {%- endif %}
 Last updated: {{ profile.fhir_last_updated }}
 """
-
-import os
-import pytest
-import io
-import unittest
-import json
 from pydantic.validators import parse_datetime
 from pydantic.validators import parse_date
 from pydantic.validators import parse_time
@@ -23,57 +17,54 @@ from pydantic import ValidationError
 
 from .fixtures import force_bytes
 from .. import {{ class.module }}
-
-def instantiate_from_file(filename):
-    """ """
-    datadir = os.environ.get('FHIR_UNITTEST_DATADIR') or ''
-    filelocation = os.path.join(datadir, filename)
-    with io.open(filelocation, 'r') as handle:
-        js = json.load(handle)
-        assert "{{ class.name }}" == js["resourceType"]
-    try:
-        instance = {{ class.module }}.{{ class.name }}(**js)
-    except ValidationError as exc:
-        # with open("errors_file.txt", "a") as fp:
-        #    fp.write(filename+"\n")
-        raise
-    return instance
-
-
 {%- for tcase in tests %}
+
 
 def impl_{{ class.name | lower }}_{{ loop.index }}(inst):
 {%- for onetest in tcase.tests %}
 {%- if onetest.klass.name in ("String", "Code", "Id", "Uri", "Oid", "Xhtml") %}
-	assert force_bytes(inst.{{ onetest.path }}) == force_bytes("{{ onetest.value | replace('"', '\\"') | replace('\\n', '\\\\n') }}")
+    assert force_bytes(inst.{{ onetest.path }}) == force_bytes("{{ onetest.value | replace('"', '\\"') | replace('\\n', '\\\\n') }}")
 {%- else %}{% if "Decimal" == onetest.klass.name or "Integer" == onetest.klass.name or "NSDecimalNumber" == onetest.klass.name %}
-	assert inst.{{ onetest.path }} == {{ onetest.value }}
+    assert inst.{{ onetest.path }} == {{ onetest.value }}
 {%- else %}{% if "bool" == onetest.klass.name %}
-	{%- if onetest.value %}
-	assert inst.{{ onetest.path }} is True
-	{%- else %}
-	assert inst.{{ onetest.path }} is False
-	{%- endif %}
+    {%- if onetest.value %}
+    assert inst.{{ onetest.path }} is True
+    {%- else %}
+    assert inst.{{ onetest.path }} is False
+    {%- endif %}
 {%- else %}{% if onetest.klass.name in ("DateTime", "Instant") %}
-	assert inst.{{ onetest.path }} == parse_datetime("{{ onetest.value }}")
+    assert inst.{{ onetest.path }} == parse_datetime("{{ onetest.value }}")
 {%- else %}{% if onetest.klass.name in ("Date",) %}
-	assert inst.{{ onetest.path }} == parse_date("{{ onetest.value }}")
+    assert inst.{{ onetest.path }} == parse_date("{{ onetest.value }}")
 {%- else %}{% if onetest.klass.name in ("Time",) %}
-	assert inst.{{ onetest.path }} == parse_time("{{ onetest.value }}")
+    assert inst.{{ onetest.path }} == parse_time("{{ onetest.value }}")
 {%- else %}
-	# Don't know how to create unit test for "{{ onetest.path }}", which is a {{ onetest.klass.name }}
+    # Don't know how to create unit test for "{{ onetest.path }}", which is a {{ onetest.klass.name }}
 {%- endif %}{% endif %}{% endif %}{% endif %}{% endif %}{% endif %}
 {%- endfor %}
 
-def test_{{ class.name | lower}}_{{ loop.index }}(base_settings):
-	inst = instantiate_from_file("{{ tcase.filename }}")
-	assert inst is not None, "Must have instantiated a {{ class.name }} instance"
-	impl_{{ class.name | lower }}_{{ loop.index }}(inst)
 
-	js = inst.dict()
-	assert "{{ class.name }}" == js["resourceType"]
-	inst2 = {{ class.module }}.{{ class.name }}(**js)
-	impl_{{ class.name | lower }}_{{ loop.index }}(inst2)
+def test_{{ class.name | lower}}_{{ loop.index }}(base_settings):
+    """No. {{ loop.index }} tests collection for {{ class.name }}.
+    Test File: {{ tcase.filename }}
+    """
+    filename = (
+        base_settings["unittest_data_dir"] / "{{ tcase.filename }}"
+    )
+    inst = {{ class.module }}.{{ class.name }}.parse_file(
+        filename, content_type="application/json", encoding="utf-8"
+    )
+    assert "{{ class.name }}" == inst.resourceType
+
+    impl_{{ class.name | lower }}_{{ loop.index }}(inst)
+
+    # testing reverse by generating data from itself and create again.
+    data = inst.dict()
+    assert "{{ class.name }}" == data["resourceType"]
+
+    inst2 = {{ class.module }}.{{ class.name }}(**data)
+    impl_{{ class.name | lower }}_{{ loop.index }}(inst2)
+
 
 {%- endfor %}
 
