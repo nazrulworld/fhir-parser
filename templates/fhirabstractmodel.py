@@ -109,7 +109,7 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
             exclude_none = True
 
         exclude_ = {"resource_type"}
-        if exclude is not None:
+        if isinstance(exclude, (list, tuple, set)):
             exclude_ = exclude_.union(exclude)
 
         result = BaseModel.dict(

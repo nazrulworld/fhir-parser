@@ -8,7 +8,7 @@ import tempfile
 import zipfile
 from os.path import dirname
 
-import pytest
+import pytest  # type: ignore
 
 EXAMPLE_RESOURCES_URL = (
     "https://github.com/nazrulworld/fhir-parser/raw/"
