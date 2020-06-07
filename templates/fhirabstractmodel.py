@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """Base class for all FHIR elements. """
 import abc
+import inspect
 import logging
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 from pydantic import BaseModel
-from pydantic.class_validators import make_generic_validator
 from pydantic.errors import ConfigError
 
 if TYPE_CHECKING:
@@ -19,7 +19,22 @@ logger = logging.getLogger(__name__)
 class FHIRAbstractModel(BaseModel, abc.ABC):
     """ Abstract base model class for all FHIR elements.
     """
-    resourceType: str = ...
+
+    resource_type: str = ...  # type: ignore
+
+    def __init__(__pydantic_self__, **data: Any) -> None:
+        """ """
+        if "resource_type" in data:
+            del data["resource_type"]
+
+        if (
+            "resourceType" in data
+            and "resourceType" not in __pydantic_self__.__fields__
+        ):
+            if __pydantic_self__.__class__.__name__ not in ("Resource", "Element"):
+                del data["resourceType"]
+
+        BaseModel.__init__(__pydantic_self__, **data)
 
     @classmethod
     def add_root_validator(
@@ -51,20 +66,28 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
                 f"Invalid signature for root validator {validator.__qualname__}: {sig}, "
                 "should be: (cls, values)."
             )
-        validator_ = make_generic_validator(validator)
         if pre:
-            if validator_ not in cls.__pre_root_validators__:
+            if validator not in cls.__pre_root_validators__:
                 if index == -1:
-                    cls.__pre_root_validators__.append(validator_)
+                    cls.__pre_root_validators__.append(validator)
                 else:
-                    cls.__pre_root_validators__.insert(index, validator_)
+                    cls.__pre_root_validators__.insert(index, validator)
             return
-        if validator_ in map(lambda x: x[1], cls.__post_root_validators__):
+        if validator in map(lambda x: x[1], cls.__post_root_validators__):
             return
         if index == -1:
-            cls.__post_root_validators__.append((skip_on_failure, validator_))
+            cls.__post_root_validators__.append((skip_on_failure, validator))
         else:
-            cls.__pre_root_validators__.insert(index, (skip_on_failure, validator_))
+            cls.__post_root_validators__.insert(index, (skip_on_failure, validator))
+
+    @classmethod
+    def has_resource_base(cls) -> bool:
+        """ """
+        # xxx: calculate metrics, other than cache it!
+        for cl in inspect.getmro(cls)[:-4]:
+            if cl.__name__ == "Resource":
+                return True
+        return False
 
     def dict(
         self,
@@ -83,18 +106,25 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
             by_alias = True
 
         if exclude_none is None:
-            exclude_none = False
+            exclude_none = True
 
-        return BaseModel.dict(
+        exclude_ = {"resource_type"}
+        if exclude is not None:
+            exclude_ = exclude_.union(exclude)
+
+        result = BaseModel.dict(
             self,
             include=include,
-            exclude=exclude,
+            exclude=exclude_,
             by_alias=by_alias,
             skip_defaults=skip_defaults,
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
         )
+        if self.__class__.has_resource_base():
+            result["resourceType"] = self.resource_type
+        return result
 
     def json(
         self,
@@ -110,6 +140,12 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
         **dumps_kwargs: Any,
     ) -> str:
         """ """
+        if by_alias is None:
+            by_alias = True
+
+        if exclude_none is None:
+            exclude_none = True
+
         return BaseModel.json(
             self,
             include=include,

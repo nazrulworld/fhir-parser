@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 """Base class for all FHIR elements. """
-from typing import Optional
+from typing import Optional, Union
 
 from pydantic import Field
 
 from .fhirabstractmodel import FHIRAbstractModel
-from .fhirtypes import Id
+from .fhirtypes import Id, String
 
 
 class FHIRResourceModel(FHIRAbstractModel):
     """ Abstract base model class for all FHIR elements.
     """
-    resourceType: str = Field("FHIRAbstractResource", const=True)
-    id: Optional[Id] = None
+    resource_type: str = Field("FHIRAbstractResource", const=True)
+    id: Optional[Union[Id, String]] = None
 
     def relative_base(self):
         """ """
-        return self.resourceType
+        return self.resource_type
 
     def relative_path(self):
         if self.id is None:

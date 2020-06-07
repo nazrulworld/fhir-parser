@@ -55,7 +55,7 @@ def test_{{ class.name | lower}}_{{ loop.index }}(base_settings):
     inst = {{ class.module }}.{{ class.name }}.parse_file(
         filename, content_type="application/json", encoding="utf-8"
     )
-    assert "{{ class.name }}" == inst.resourceType
+    assert "{{ class.name }}" == inst.resource_type
 
     impl_{{ class.name | lower }}_{{ loop.index }}(inst)
 
