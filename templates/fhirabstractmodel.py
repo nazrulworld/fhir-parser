@@ -82,7 +82,7 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
             cls.__post_root_validators__.insert(index, (skip_on_failure, validator))
 
     @classmethod
-    @lru_cache(maxsize=None, typed=True)
+    @lru_cache(maxsize=1024, typed=True)
     def has_resource_base(cls) -> bool:
         """ """
         # xxx: calculate metrics, other than cache it!

@@ -6,8 +6,12 @@ from uuid import UUID
 
 from pydantic import AnyUrl
 from pydantic.main import load_str_bytes
-from pydantic.types import (ConstrainedBytes, ConstrainedDecimal,
-                            ConstrainedInt, ConstrainedStr)
+from pydantic.types import (
+    ConstrainedBytes,
+    ConstrainedDecimal,
+    ConstrainedInt,
+    ConstrainedStr,
+)
 from pydantic.typing import AnyCallable
 from pydantic.validators import bool_validator, parse_datetime, parse_time
 
@@ -18,8 +22,6 @@ if TYPE_CHECKING:
     from pydantic.types import CallableGenerator
 
 __author__ = "Md Nazrul Islam<email2nazrul@gmail.com>"
-
-_CUSTOM_TYPE_VALIDATORS: Dict[str, List[AnyCallable]] = dict()
 
 
 if TYPE_CHECKING:
@@ -268,38 +270,6 @@ class Time(datetime.time):
         return value
 
 
-def add_validator_for_fhir_type(
-    type_name_or_model_name: str, validator: AnyCallable, index: int = -1
-):
-    """ """
-    global _CUSTOM_TYPE_VALIDATORS
-    try:
-        cls = globals()[type_name_or_model_name]
-    except KeyError:
-        cls = get_fhir_type_class(type_name_or_model_name)
-
-    if cls.__name__ not in _CUSTOM_TYPE_VALIDATORS:
-        _CUSTOM_TYPE_VALIDATORS[cls.__name__] = list()
-
-    if validator in _CUSTOM_TYPE_VALIDATORS[cls.__name__]:
-        return
-    if index == -1:
-        _CUSTOM_TYPE_VALIDATORS[cls.__name__].append(validator)
-    else:
-        _CUSTOM_TYPE_VALIDATORS[cls.__name__].insert(index, validator)
-
-
-def get_validator_for_fhir_type(
-    type_name_or_model_name: str, default: Union[None, list] = None
-):
-    global _CUSTOM_TYPE_VALIDATORS
-    try:
-        cls = globals()[type_name_or_model_name]
-    except KeyError:
-        cls = get_fhir_type_class(type_name_or_model_name)
-    return _CUSTOM_TYPE_VALIDATORS.get(cls.__name__, default)
-
-
 def get_fhir_type_class(model_name):
     try:
         return globals()[model_name + "Type"]
@@ -321,8 +291,6 @@ class AbstractType(dict):
         from . import fhirtypesvalidators
 
         yield getattr(fhirtypesvalidators, cls.__resource_type__.lower() + "_validator")
-        if get_validator_for_fhir_type(cls.__name__, None):
-            yield from get_validator_for_fhir_type(cls.__name__)
 
 
 class AbstractBaseType(dict):
