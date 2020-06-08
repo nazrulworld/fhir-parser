@@ -7,6 +7,7 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 from pydantic import BaseModel
+from pydantic import Extra
 from pydantic.errors import ConfigError
 
 if TYPE_CHECKING:
@@ -161,5 +162,7 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
         )
 
     class Config:
-        validate_assignment = True
         allow_population_by_field_name = True
+        extra = Extra.forbid
+        validate_assignment = True
+        error_msg_templates = {"value_error.extra": "extra fields not permitted"}
