@@ -6,9 +6,9 @@ import logging
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
-from pydantic import BaseModel
-from pydantic import Extra
-from pydantic.errors import ConfigError
+from pydantic import BaseModel, Extra
+from pydantic.error_wrappers import ErrorWrapper, ValidationError
+from pydantic.errors import ConfigError, PydanticValueError
 
 if TYPE_CHECKING:
     from pydantic.typing import AbstractSetIntStr, MappingIntStrAny, DictStrAny
@@ -16,6 +16,11 @@ if TYPE_CHECKING:
 __author__ = "Md Nazrul Islam<email2nazrul@gmail.com>"
 
 logger = logging.getLogger(__name__)
+
+
+class WrongResourceType(PydanticValueError):
+    code = "wrong.resource_type"
+    msg_template = "Wrong ResourceType: {error}"
 
 
 class FHIRAbstractModel(BaseModel, abc.ABC):
@@ -26,16 +31,31 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
 
     def __init__(__pydantic_self__, **data: Any) -> None:
         """ """
-        if "resource_type" in data:
-            del data["resource_type"]
-
+        resource_type = data.pop("resource_type", None)
+        errors = []
         if (
             "resourceType" in data
             and "resourceType" not in __pydantic_self__.__fields__
         ):
-            if __pydantic_self__.__class__.__name__ not in ("Resource", "Element"):
-                del data["resourceType"]
+            resource_type = data.pop("resourceType", None)
 
+        if (
+            resource_type is not None
+            and resource_type != __pydantic_self__.__fields__["resource_type"].default
+        ):
+            expected_resource_type = __pydantic_self__.__fields__[
+                "resource_type"
+            ].default
+            error = (
+                f"``{__pydantic_self__.__class__.__module__}.{__pydantic_self__.__class__.__name__}`` "
+                f"expects resource type ``{expected_resource_type}``, but got ``{resource_type}``. "
+                "Make sure resource type name is correct and right ModelClass has been chosen."
+            )
+            errors.append(
+                ErrorWrapper(WrongResourceType(error=error), loc="resource_type")
+            )
+        if errors:
+            raise ValidationError(errors, __pydantic_self__.__class__)
         BaseModel.__init__(__pydantic_self__, **data)
 
     @classmethod
