@@ -13,14 +13,15 @@ from pydantic.types import (
     ConstrainedStr,
 )
 from pydantic.typing import AnyCallable
-from pydantic.validators import bool_validator
+from pydantic.validators import bool_validator, parse_datetime, parse_time
 
 from .fhirabstractmodel import FHIRAbstractModel
 from .fhirtypesvalidators import run_validator_for_fhir_type
 
-__author__ = "Md Nazrul Islam<email2nazrul@gmail.com>"
+if TYPE_CHECKING:
+    from pydantic.types import CallableGenerator
 
-_CUSTOM_TYPE_VALIDATORS: Dict[str, List[AnyCallable]] = dict()
+__author__ = "Md Nazrul Islam<email2nazrul@gmail.com>"
 
 
 if TYPE_CHECKING:
@@ -52,14 +53,14 @@ class String(ConstrainedStr):
     could be trimmed to nothing, which would be treated as an invalid element value.
     Therefore strings SHOULD always contain non-whitespace conten"""
 
-    regex = re.compile("[ \r\n\t\S]+")
+    regex = re.compile(r"[ \r\n\t\S]+")
     __visit_name__ = "string"
 
 
 class Base64Binary(ConstrainedBytes):
     """A stream of bytes, base64 encoded (RFC 4648 )"""
 
-    regex = re.compile(b"(\s*([0-9a-zA-Z\+\=]){4}\s*)+")
+    regex = re.compile(r"(\s*([0-9a-zA-Z+=]){4}\s*)+")
     __visit_name__ = "base64Binary"
 
 
@@ -70,7 +71,7 @@ class Code(ConstrainedStr):
     character and no leading or trailing whitespace, and where there is
     no whitespace other than single spaces in the contents"""
 
-    regex = re.compile("[^\s]+(\s[^\s]+)*")
+    regex = re.compile(r"[^\s]+(\s[^\s]+)*")
     __visit_name__ = "code"
 
 
@@ -81,7 +82,7 @@ class Id(ConstrainedStr):
     pattern that meets these constraints.)
     """
 
-    regex = re.compile("[A-Za-z0-9\-\.]{1,64}")
+    regex = re.compile(r"[A-Za-z0-9\-.]{1,64}")
     min_length = 1
     max_length = 64
     __visit_name__ = "id"
@@ -91,7 +92,7 @@ class Decimal(ConstrainedDecimal):
     """Rational numbers that have a decimal representation.
     See below about the precision of the number"""
 
-    regex = re.compile("-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?")
+    regex = re.compile(r"-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?")
     __visit_name__ = "decimal"
 
 
@@ -99,14 +100,14 @@ class Integer(ConstrainedInt):
     """A signed integer in the range −2,147,483,648..2,147,483,647 (32-bit;
     for larger values, use decimal)"""
 
-    regex = re.compile("[0]|[-+]?[1-9][0-9]*")
+    regex = re.compile(r"[0]|[-+]?[1-9][0-9]*")
     __visit_name__ = "integer"
 
 
 class UnsignedInt(ConstrainedInt):
     """Any non-negative integer in the range 0..2,147,483,647"""
 
-    regex = re.compile("[0]|([1-9][0-9]*)")
+    regex = re.compile(r"[0]|([1-9][0-9]*)")
     __visit_name__ = "unsignedInt"
     ge = 0
 
@@ -114,19 +115,19 @@ class UnsignedInt(ConstrainedInt):
 class PositiveInt(ConstrainedInt):
     """Any positive integer in the range 1..2,147,483,647"""
 
-    regex = re.compile("\+?[1-9][0-9]*")
+    regex = re.compile(r"\+?[1-9][0-9]*")
     __visit_name__ = "positiveInt"
     gt = 0
 
 
 class Uri(ConstrainedStr):
     __visit_name__ = "uri"
-    regex = re.compile("\S*")
+    regex = re.compile(r"\S*")
 
 
 class Oid(ConstrainedStr):
     __visit_name__ = "oid"
-    regex = re.compile("urn:oid:[0-2](\.(0|[1-9][0-9]*))+")
+    regex = re.compile(r"urn:oid:[0-2](\.(0|[1-9][0-9]*))+")
 
 
 class Uuid(UUID):
@@ -151,7 +152,7 @@ class Markdown(ConstrainedStr):
     by a markdown presentation engine, in the GFM extension of CommonMark format (see below)"""
 
     __visit_name__ = "markdown"
-    regex = re.compile("\s*(\S|\s)*")
+    regex = re.compile(r"\s*(\S|\s)*")
 
 
 class Xhtml(ConstrainedStr):
@@ -166,9 +167,9 @@ class Date(datetime.date):
     There SHALL be no time zone. Dates SHALL be valid dates"""
 
     regex = re.compile(
-        "([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|"
-        "[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2]"
-        "[0-9]|3[0-1]))?)?"
+        r"([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|"
+        r"[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2]"
+        r"[0-9]|3[0-1]))?)?"
     )
     __visit_name__ = "date"
 
@@ -185,13 +186,27 @@ class DateTime(datetime.datetime):
     Leap Seconds are allowed - see below"""
 
     regex = re.compile(
-        "([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|"
-        "[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|"
-        "3[0-1])(T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|"
-        "60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|"
-        "1[0-3]):[0-5][0-9]|14:00)))?)?)?"
+        r"([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|"
+        r"[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|"
+        r"3[0-1])(T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|"
+        r"60)(\.[0-9]+)?(Z|([+\-])((0[0-9]|"
+        r"1[0-3]):[0-5][0-9]|14:00)))?)?)?"
     )
     __visit_name__ = "dateTime"
+
+    @classmethod
+    def __get_validators__(cls) -> "CallableGenerator":
+
+        yield cls.validate
+        yield parse_datetime
+
+    @classmethod
+    def validate(cls, value):
+        """ """
+        if isinstance(value, str):
+            if not cls.regex.match(value):
+                raise ValueError
+        return value
 
 
 class Instant(datetime.datetime):
@@ -206,13 +221,27 @@ class Instant(datetime.datetime):
     Note: This type is for system times, not human times (see date and dateTime below)."""
 
     regex = re.compile(
-        "([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|"
-        "[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|"
-        "3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]"
-        "|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|"
-        "1[0-3]):[0-5][0-9]|14:00))"
+        r"([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|"
+        r"[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|"
+        r"3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]"
+        r"|60)(\.[0-9]+)?(Z|([+\-])((0[0-9]|"
+        r"1[0-3]):[0-5][0-9]|14:00))"
     )
     __visit_name__ = "instant"
+
+    @classmethod
+    def __get_validators__(cls) -> "CallableGenerator":
+
+        yield cls.validate
+        yield parse_datetime
+
+    @classmethod
+    def validate(cls, value):
+        """ """
+        if isinstance(value, str):
+            if not cls.regex.match(value):
+                raise ValueError
+        return value
 
 
 class Time(datetime.time):
@@ -223,40 +252,22 @@ class Time(datetime.time):
     The time "24:00" SHALL NOT be used. A time zone SHALL NOT be present.
     Times can be converted to a Duration since midnight."""
 
-    regex = re.compile("([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?")
+    regex = re.compile(r"([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?")
     __visit_name__ = "time"
 
+    @classmethod
+    def __get_validators__(cls) -> "CallableGenerator":
 
-def add_validator_for_fhir_type(
-    type_name_or_model_name: str, validator: AnyCallable, index: int = -1
-):
-    """ """
-    global _CUSTOM_TYPE_VALIDATORS
-    try:
-        cls = globals()[type_name_or_model_name]
-    except KeyError:
-        cls = get_fhir_type_class(type_name_or_model_name)
+        yield cls.validate
+        yield parse_time
 
-    if cls.__name__ not in _CUSTOM_TYPE_VALIDATORS:
-        _CUSTOM_TYPE_VALIDATORS[cls.__name__] = list()
-
-    if validator in _CUSTOM_TYPE_VALIDATORS[cls.__name__]:
-        return
-    if index == -1:
-        _CUSTOM_TYPE_VALIDATORS[cls.__name__].append(validator)
-    else:
-        _CUSTOM_TYPE_VALIDATORS[cls.__name__].insert(index, validator)
-
-
-def get_validator_for_fhir_type(
-    type_name_or_model_name: str, default: Union[None, list] = None
-):
-    global _CUSTOM_TYPE_VALIDATORS
-    try:
-        cls = globals()[type_name_or_model_name]
-    except KeyError:
-        cls = get_fhir_type_class(type_name_or_model_name)
-    return _CUSTOM_TYPE_VALIDATORS.get(cls.__name__, default)
+    @classmethod
+    def validate(cls, value):
+        """ """
+        if isinstance(value, str):
+            if not cls.regex.match(value):
+                raise ValueError
+        return value
 
 
 def get_fhir_type_class(model_name):
@@ -269,7 +280,7 @@ def get_fhir_type_class(model_name):
 class AbstractType(dict):
     """ """
 
-    __resource_type__ = ...
+    __resource_type__: str = ...  # type: ignore
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
@@ -280,14 +291,12 @@ class AbstractType(dict):
         from . import fhirtypesvalidators
 
         yield getattr(fhirtypesvalidators, cls.__resource_type__.lower() + "_validator")
-        if get_validator_for_fhir_type(cls.__name__, None):
-            yield from get_validator_for_fhir_type(cls.__name__)
 
 
 class AbstractBaseType(dict):
     """ """
 
-    __resource_type__ = ...
+    __resource_type__: str = ...  # type: ignore
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
@@ -302,23 +311,20 @@ class AbstractBaseType(dict):
         """ """
         if isinstance(v, (bytes, str)):
             input_data = load_str_bytes(v)
-            resource_type = input_data.get("resourceType", None)
+            resource_type = input_data.pop("resourceType", None)
         elif isinstance(v, FHIRAbstractModel):
-            resource_type = v.resourceType
+            resource_type = v.resource_type
         else:
-            resource_type = v.get("resourceType", None)
+            resource_type = v.pop("resourceType", None)
 
-        if resource_type is None:
-            raise ValueError(
-                "'resourceType' is required, when generic ElementType is used"
-            )
-        if resource_type == cls.__resource_type__:
+        if resource_type is None or resource_type == cls.__resource_type__:
             from . import fhirtypesvalidators
 
             v = getattr(
                 fhirtypesvalidators, cls.__resource_type__.lower() + "_validator"
             )(v)
             return v
+
         type_class = get_fhir_type_class(resource_type)
         v = run_validator_for_fhir_type(type_class, v, values, config, field)
         return v

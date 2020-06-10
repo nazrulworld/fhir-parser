@@ -11,13 +11,12 @@ Revision: {{ info.revision }}
 Last updated: {{ profile.fhir_last_updated }}
 """
 {%- if has_array_type %}
-from typing import List
+from typing import List as ListType
 {% endif %}
 from pydantic import Field
 {%- if has_one_of_many %}
 from pydantic import root_validator
 from typing import Dict
-from typing import Type
 from typing import Any
 {% endif %}
 {%- if need_fhirtypes %}
@@ -40,14 +39,14 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
 {%- endif %}
     """
 {%- if klass.resource_type %}
-    resourceType = Field("{{ klass.resource_type }}", const=True)
+    resource_type = Field("{{ klass.resource_type }}", const=True)
 {%- endif %}
 {%- for prop in klass.properties %}
 	{% set type_klass_ %}
 		{%- if prop.field_type_module %}{{ prop.field_type_module }}.{{ prop.field_type }}{% else %}{{ prop.field_type }}{% endif -%}
 	{%endset -%}
 	{%- set type_klass %}
-		{%- if prop.is_array %}List[{{ type_klass_ }}]{% else %}{{ type_klass_ }}{% endif -%}
+		{%- if prop.is_array %}ListType[{{ type_klass_ }}]{% else %}{{ type_klass_ }}{% endif -%}
 	{% endset %}
 	{%- set title %}
 		{% if prop.is_array %}List of{% else %}Type{% endif %} `{{ prop.class_name }}`{% if prop.is_array %} items{% endif %}
@@ -69,7 +68,7 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
 {% if klass.name in one_of_many_fields %}
     @root_validator(pre=True)
     def validate_one_of_many(
-        cls: Type['{{ klass.name }}'], values: Dict[str, Any]
+        cls, values: Dict[str, Any]
     ) -> Dict[str, Any]:
         """https://www.hl7.org/fhir/formats.html#choice
         A few elements have a choice of more than one data type for their content.
@@ -104,12 +103,12 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
                     if found is True:
                         raise ValueError(
                             "Any of one field value is expected from "
-                            f"{fields}, but got multiple!"
+                            f"this list {fields}, but got multiple!"
                         )
                     else:
                         found = True
             if required is True and found is False:
-                raise ValueError(f"Expect any of field value from this list {values}.")
+                raise ValueError(f"Expect any of field value from this list {fields}.")
 
         return values
 {% endif -%}

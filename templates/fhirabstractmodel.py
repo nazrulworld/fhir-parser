@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
 """Base class for all FHIR elements. """
 import abc
+import inspect
 import logging
-from typing import Callable
-from typing import Any
-from typing import Optional
-from typing import Union
-from pydantic import BaseModel
-from pydantic.errors import ConfigError
-from pydantic.class_validators import make_generic_validator
-from typing import TYPE_CHECKING
+from functools import lru_cache
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+
+from pydantic import BaseModel, Extra
+from pydantic.error_wrappers import ErrorWrapper, ValidationError
+from pydantic.errors import ConfigError, PydanticValueError
 
 if TYPE_CHECKING:
     from pydantic.typing import AbstractSetIntStr, MappingIntStrAny, DictStrAny
@@ -19,10 +18,45 @@ __author__ = "Md Nazrul Islam<email2nazrul@gmail.com>"
 logger = logging.getLogger(__name__)
 
 
+class WrongResourceType(PydanticValueError):
+    code = "wrong.resource_type"
+    msg_template = "Wrong ResourceType: {error}"
+
+
 class FHIRAbstractModel(BaseModel, abc.ABC):
     """ Abstract base model class for all FHIR elements.
     """
-    resourceType: str = ...
+
+    resource_type: str = ...  # type: ignore
+
+    def __init__(__pydantic_self__, **data: Any) -> None:
+        """ """
+        resource_type = data.pop("resource_type", None)
+        errors = []
+        if (
+            "resourceType" in data
+            and "resourceType" not in __pydantic_self__.__fields__
+        ):
+            resource_type = data.pop("resourceType", None)
+
+        if (
+            resource_type is not None
+            and resource_type != __pydantic_self__.__fields__["resource_type"].default
+        ):
+            expected_resource_type = __pydantic_self__.__fields__[
+                "resource_type"
+            ].default
+            error = (
+                f"``{__pydantic_self__.__class__.__module__}.{__pydantic_self__.__class__.__name__}`` "
+                f"expects resource type ``{expected_resource_type}``, but got ``{resource_type}``. "
+                "Make sure resource type name is correct and right ModelClass has been chosen."
+            )
+            errors.append(
+                ErrorWrapper(WrongResourceType(error=error), loc="resource_type")
+            )
+        if errors:
+            raise ValidationError(errors, __pydantic_self__.__class__)
+        BaseModel.__init__(__pydantic_self__, **data)
 
     @classmethod
     def add_root_validator(
@@ -54,20 +88,29 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
                 f"Invalid signature for root validator {validator.__qualname__}: {sig}, "
                 "should be: (cls, values)."
             )
-        validator_ = make_generic_validator(validator)
         if pre:
-            if validator_ not in cls.__pre_root_validators__:
+            if validator not in cls.__pre_root_validators__:
                 if index == -1:
-                    cls.__pre_root_validators__.append(validator_)
+                    cls.__pre_root_validators__.append(validator)
                 else:
-                    cls.__pre_root_validators__.insert(index, validator_)
+                    cls.__pre_root_validators__.insert(index, validator)
             return
-        if validator_ in map(lambda x: x[1], cls.__post_root_validators__):
+        if validator in map(lambda x: x[1], cls.__post_root_validators__):
             return
         if index == -1:
-            cls.__post_root_validators__.append((skip_on_failure, validator_))
+            cls.__post_root_validators__.append((skip_on_failure, validator))
         else:
-            cls.__pre_root_validators__.insert(index, (skip_on_failure, validator_))
+            cls.__post_root_validators__.insert(index, (skip_on_failure, validator))
+
+    @classmethod
+    @lru_cache(maxsize=1024, typed=True)
+    def has_resource_base(cls) -> bool:
+        """ """
+        # xxx: calculate metrics, other than cache it!
+        for cl in inspect.getmro(cls)[:-4]:
+            if cl.__name__ == "Resource":
+                return True
+        return False
 
     def dict(
         self,
@@ -88,16 +131,23 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
         if exclude_none is None:
             exclude_none = True
 
-        return BaseModel.dict(
+        exclude_ = {"resource_type"}
+        if isinstance(exclude, (list, tuple, set)):
+            exclude_ = exclude_.union(exclude)
+
+        result = BaseModel.dict(
             self,
             include=include,
-            exclude=exclude,
+            exclude=exclude_,
             by_alias=by_alias,
             skip_defaults=skip_defaults,
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
         )
+        if self.__class__.has_resource_base():
+            result["resourceType"] = self.resource_type
+        return result
 
     def json(
         self,
@@ -113,6 +163,12 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
         **dumps_kwargs: Any,
     ) -> str:
         """ """
+        if by_alias is None:
+            by_alias = True
+
+        if exclude_none is None:
+            exclude_none = True
+
         return BaseModel.json(
             self,
             include=include,
@@ -126,5 +182,7 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
         )
 
     class Config:
-        validate_assignment = True
         allow_population_by_field_name = True
+        extra = Extra.forbid
+        validate_assignment = True
+        error_msg_templates = {"value_error.extra": "extra fields not permitted"}

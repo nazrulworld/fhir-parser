@@ -48,7 +48,7 @@ def fhir_model_validator(model_name: str, v: Union[StrBytes, dict, Path, FHIRAbs
         v = model_class.parse_obj(v)
     if not isinstance(v, FHIRAbstractModel):
         raise ValueError()
-    if model_name != v.resourceType:
+    if model_name != v.resource_type:
         raise ValueError
     return v
 

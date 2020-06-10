@@ -10,21 +10,22 @@ Revision: {{ info.revision }}
 {%- endif %}
 Last updated: {{ profile.fhir_last_updated }}
 """
-from pydantic.validators import parse_datetime
-from pydantic.validators import parse_date
-from pydantic.validators import parse_time
-from pydantic import ValidationError
+from pydantic.validators import bytes_validator  # noqa: F401
+from pydantic.validators import parse_date  # noqa: F401
+from pydantic.validators import parse_datetime  # noqa: F401
+from pydantic.validators import parse_time  # noqa: F401
 
-from .fixtures import force_bytes
 from .. import {{ class.module }}
 {%- for tcase in tests %}
 
 
 def impl_{{ class.name | lower }}_{{ loop.index }}(inst):
 {%- for onetest in tcase.tests %}
-{%- if onetest.klass.name in ("String", "Code", "Id", "Uri", "Oid", "Xhtml") %}
-    assert force_bytes(inst.{{ onetest.path }}) == force_bytes("{{ onetest.value | replace('"', '\\"') | replace('\\n', '\\\\n') }}")
-{%- else %}{% if "Decimal" == onetest.klass.name or "Integer" == onetest.klass.name or "NSDecimalNumber" == onetest.klass.name %}
+{%- if onetest.klass.name in ("String", "Code", "Id", "Uri", "Oid", "Xhtml", "Uuid", "Canonical", "Url", "Markdown") %}
+    assert inst.{{ onetest.path }} == "{{ onetest.value | replace('"', '\\"') | replace('\\n', '\\\\n') }}"
+{%- else %}{% if onetest.klass.name == "base64Binary" %}
+    assert inst.{{ onetest.path }} == bytes_validator("{{ onetest.value }}")
+{%- else %}{% if onetest.klass.name in ("Decimal", "Integer", "NSDecimalNumber", "UnsignedInt", "PositiveInt") %}
     assert inst.{{ onetest.path }} == {{ onetest.value }}
 {%- else %}{% if "bool" == onetest.klass.name %}
     {%- if onetest.value %}
@@ -40,7 +41,7 @@ def impl_{{ class.name | lower }}_{{ loop.index }}(inst):
     assert inst.{{ onetest.path }} == parse_time("{{ onetest.value }}")
 {%- else %}
     # Don't know how to create unit test for "{{ onetest.path }}", which is a {{ onetest.klass.name }}
-{%- endif %}{% endif %}{% endif %}{% endif %}{% endif %}{% endif %}
+{%- endif %}{% endif %}{% endif %}{% endif %}{% endif %}{% endif %}{% endif %}
 {%- endfor %}
 
 
@@ -54,7 +55,7 @@ def test_{{ class.name | lower}}_{{ loop.index }}(base_settings):
     inst = {{ class.module }}.{{ class.name }}.parse_file(
         filename, content_type="application/json", encoding="utf-8"
     )
-    assert "{{ class.name }}" == inst.resourceType
+    assert "{{ class.name }}" == inst.resource_type
 
     impl_{{ class.name | lower }}_{{ loop.index }}(inst)
 

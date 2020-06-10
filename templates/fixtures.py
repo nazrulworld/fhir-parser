@@ -8,8 +8,7 @@ import tempfile
 import zipfile
 from os.path import dirname
 
-import pytest
-import six
+import pytest  # type: ignore
 
 EXAMPLE_RESOURCES_URL = (
     "https://github.com/nazrulworld/fhir-parser/raw/"
@@ -18,20 +17,6 @@ EXAMPLE_RESOURCES_URL = (
 )
 ROOT_PATH = dirname(dirname(dirname(dirname(os.path.abspath(__file__)))))
 CACHE_PATH = os.path.join(ROOT_PATH, ".cache")
-
-
-def force_bytes(string, encoding="utf8", errors="strict"):
-
-    if isinstance(string, bytes):
-        if encoding == "utf8":
-            return string
-        else:
-            return string.decode("utf8", errors).encode(encoding, errors)
-
-    if not isinstance(string, six.string_types):
-        return string
-
-    return string.encode(encoding, errors)
 
 
 def download_and_store(url, path):
