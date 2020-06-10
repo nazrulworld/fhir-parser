@@ -103,12 +103,12 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
                     if found is True:
                         raise ValueError(
                             "Any of one field value is expected from "
-                            f"{fields}, but got multiple!"
+                            f"this list {fields}, but got multiple!"
                         )
                     else:
                         found = True
             if required is True and found is False:
-                raise ValueError(f"Expect any of field value from this list {values}.")
+                raise ValueError(f"Expect any of field value from this list {fields}.")
 
         return values
 {% endif -%}
