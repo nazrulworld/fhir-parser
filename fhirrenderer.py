@@ -101,7 +101,9 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
         ]
         all_classes = sorted(all_classes, key=lambda x: x.name)
         target_path = self.settings.RESOURCE_TARGET_DIRECTORY / "fhirtypesvalidators.py"
-        self.do_render({"classes": all_classes}, "fhirtypesvalidators.jinja2", target_path)
+        self.do_render(
+            {"classes": all_classes}, "fhirtypesvalidators.jinja2", target_path
+        )
 
     def render_fhir_types(self):
         """ """
@@ -120,7 +122,6 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
         all_classes = sorted(all_classes, key=lambda x: x.name)
         target_path = self.settings.RESOURCE_TARGET_DIRECTORY / "fhirtypes.py"
         self.do_render({"classes": all_classes}, "fhirtypes.jinja2", target_path)
-
 
     def render(self):
         for profile in self.spec.writable_profiles():
@@ -166,7 +167,9 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                             one_of_many_fields[klass.name] = {prop.one_of_many: []}
                         if prop.one_of_many not in one_of_many_fields[klass.name]:
                             one_of_many_fields[klass.name][prop.one_of_many] = []
-                        one_of_many_fields[klass.name][prop.one_of_many].append(prop.name)
+                        one_of_many_fields[klass.name][prop.one_of_many].append(
+                            prop.name
+                        )
             data = {
                 "profile": profile,
                 "release_name": self.spec.settings.CURRENT_RELEASE_NAME,
@@ -177,7 +180,7 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                 "has_array_type": has_array_type,
                 "fhir_class_types": FHIR_CLASS_TYPES,
                 "one_of_many_fields": one_of_many_fields,
-                "has_one_of_many": has_one_of_many
+                "has_one_of_many": has_one_of_many,
             }
             ptrn = (
                 profile.targetname.lower()
@@ -251,11 +254,21 @@ class FHIRUnitTestRenderer(FHIRRenderer):
             return
         # render all unit test collections
         for coll in self.spec.unit_tests:
-
+            tests = coll.tests
+            if (
+                self.settings.CURRENT_RELEASE_NAME == "R4"
+                and coll.klass.name == "Bundle"
+            ):
+                tests = [
+                    t
+                    for t in tests
+                    if t.filename
+                    not in ("profiles-types.json", "extension-definitions.json")
+                ]
             data = {
                 "info": self.spec.info,
                 "class": coll.klass,
-                "tests": coll.tests,
+                "tests": tests,
                 "profile": self.spec.profiles[coll.klass.name.lower()],
                 "release_name": self.settings.CURRENT_RELEASE_NAME,
             }
