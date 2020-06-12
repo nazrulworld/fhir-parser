@@ -1,18 +1,15 @@
 # _*_ coding: utf-8 _*_
 import datetime
 import re
+from email.utils import formataddr, parseaddr
 from typing import TYPE_CHECKING, Any, Dict, List, Union
 from uuid import UUID
 
 from pydantic import AnyUrl
 from pydantic.main import load_str_bytes
-from pydantic.types import (
-    ConstrainedBytes,
-    ConstrainedDecimal,
-    ConstrainedInt,
-    ConstrainedStr,
-)
-from pydantic.typing import AnyCallable
+from pydantic.networks import validate_email
+from pydantic.types import (ConstrainedBytes, ConstrainedDecimal,
+                            ConstrainedInt, ConstrainedStr)
 from pydantic.validators import bool_validator, parse_datetime, parse_time
 
 from .fhirabstractmodel import FHIRAbstractModel
@@ -20,6 +17,8 @@ from .fhirtypesvalidators import run_validator_for_fhir_type
 
 if TYPE_CHECKING:
     from pydantic.types import CallableGenerator
+    from pydantic.fields import ModelField
+    from pydantic import BaseConfig
 
 __author__ = "Md Nazrul Islam<email2nazrul@gmail.com>"
 
@@ -145,6 +144,25 @@ class Canonical(Uri):
 class Url(AnyUrl):
     regex = None
     __visit_name__ = "url"
+
+    @classmethod
+    def validate(
+        cls, value: str, field: "ModelField", config: "BaseConfig"
+    ) -> Union["AnyUrl", str]:
+        """ """
+        if value.startswith("mailto:"):
+            schema = value[0:7]
+            email = value[7:]
+            realname = parseaddr(email)
+            name, email = validate_email(email)
+            if realname:
+                email = formataddr((name, email))
+            return schema + email
+        elif value.startswith("mllp:") or value.startswith("llp:"):
+            # xxx: find validation
+            return value
+
+        return AnyUrl.validate(value, field, config)
 
 
 class Markdown(ConstrainedStr):
