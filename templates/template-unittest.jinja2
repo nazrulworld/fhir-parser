@@ -10,12 +10,9 @@ Revision: {{ info.revision }}
 {%- endif %}
 Last updated: {{ profile.fhir_last_updated }}
 """
-from pydantic.validators import bytes_validator  # noqa: F401
-from pydantic.validators import parse_date  # noqa: F401
-from pydantic.validators import parse_datetime  # noqa: F401
-from pydantic.validators import parse_time  # noqa: F401
-
+from .. import fhirtypes  # noqa: F401
 from .. import {{ class.module }}
+
 {%- for tcase in tests %}
 
 
@@ -35,15 +32,11 @@ def impl_{{ class.name | lower }}_{{ loop.index }}(inst):
     {%- else %}
     assert inst.{{ onetest.path }} is False
     {%- endif %}
-{%- else %}{% if onetest.klass.name in ("DateTime", "Instant") %}
-    assert inst.{{ onetest.path }} == parse_datetime("{{ onetest.value }}")
-{%- else %}{% if onetest.klass.name in ("Date",) %}
-    assert inst.{{ onetest.path }} == parse_date("{{ onetest.value }}")
-{%- else %}{% if onetest.klass.name in ("Time",) %}
-    assert inst.{{ onetest.path }} == parse_time("{{ onetest.value }}")
+{%- else %}{% if onetest.klass.name in ("DateTime", "Instant", "Date", "Time") %}
+    assert inst.{{ onetest.path }} == {{ onetest.klass.module }}.{{ onetest.klass.name }}.validate("{{ onetest.value }}")
 {%- else %}
     # Don't know how to create unit test for "{{ onetest.path }}", which is a {{ onetest.klass.name }}
-{%- endif %}{% endif %}{% endif %}{% endif %}{% endif %}{% endif %}{% endif %}{% endif %}
+{%- endif %}{% endif %}{% endif %}{% endif %}{% endif %}{% endif %}
 {%- endfor %}
 
 

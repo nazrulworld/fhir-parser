@@ -2,15 +2,20 @@
 import datetime
 import re
 from email.utils import formataddr, parseaddr
-from typing import TYPE_CHECKING, Any, Dict, List, Union
+from typing import TYPE_CHECKING, Any, Dict, Union
 from uuid import UUID
 
 from pydantic import AnyUrl
+from pydantic.errors import DateError, DateTimeError, TimeError
 from pydantic.main import load_str_bytes
 from pydantic.networks import validate_email
-from pydantic.types import (ConstrainedBytes, ConstrainedDecimal,
-                            ConstrainedInt, ConstrainedStr)
-from pydantic.validators import bool_validator, parse_datetime, parse_time
+from pydantic.types import (
+    ConstrainedBytes,
+    ConstrainedDecimal,
+    ConstrainedInt,
+    ConstrainedStr,
+)
+from pydantic.validators import bool_validator, parse_date, parse_datetime, parse_time
 
 from .fhirabstractmodel import FHIRAbstractModel
 from .fhirtypesvalidators import run_validator_for_fhir_type
@@ -22,6 +27,7 @@ if TYPE_CHECKING:
 
 __author__ = "Md Nazrul Islam<email2nazrul@gmail.com>"
 
+FHIR_DATE_PARTS = re.compile(r"(?P<year>\d{4})(-(?P<month>\d{2}))?(-(?P<day>\d{2}))?$")
 
 if TYPE_CHECKING:
     Boolean = bool
@@ -120,11 +126,21 @@ class PositiveInt(ConstrainedInt):
 
 
 class Uri(ConstrainedStr):
+    """A Uniform Resource Identifier Reference (RFC 3986 ).
+    Note: URIs are case sensitive. For UUID (urn:uuid:53fefa32-fcbb-4ff8-8a92-55ee120877b7)
+    use all lowercase	xs:anyURI	A JSON string - a URI
+    Regex: \S* (This regex is very permissive, but URIs must be valid.
+    Implementers are welcome to use more specific regex statements for a URI in specific contexts)
+    URIs can be absolute or relative, and may have an optional fragment identifier
+    This data type can be bound to a ValueSet"""
+
     __visit_name__ = "uri"
     regex = re.compile(r"\S*")
 
 
 class Oid(ConstrainedStr):
+    """An OID represented as a URI (RFC 3001 ); e.g. urn:oid:1.2.3.4.5"""
+
     __visit_name__ = "oid"
     regex = re.compile(r"urn:oid:[0-2](\.(0|[1-9][0-9]*))+")
 
@@ -138,10 +154,23 @@ class Uuid(UUID):
 
 
 class Canonical(Uri):
+    """A URI that refers to a resource by its canonical URL (resources with a url property).
+    The canonical type differs from a uri in that it has special meaning in this specification,
+    and in that it may have a version appended, separated by a vertical bar (|).
+    Note that the type canonical is not used for the actual canonical URLs that are
+    the target of these references, but for the URIs that refer to them, and may have
+    the version suffix in them. Like other URIs, elements of type canonical may also have
+    #fragment references"""
+
     __visit_name__ = "canonical"
 
 
 class Url(AnyUrl):
+    """A Uniform Resource Locator (RFC 1738 ).
+    Note URLs are accessed directly using the specified protocol.
+    Common URL protocols are http{s}:, ftp:, mailto: and mllp:,
+    though many others are defined"""
+
     regex = None
     __visit_name__ = "url"
 
@@ -191,6 +220,35 @@ class Date(datetime.date):
     )
     __visit_name__ = "date"
 
+    @classmethod
+    def __get_validators__(cls) -> "CallableGenerator":
+
+        yield cls.validate
+
+    @classmethod
+    def validate(
+        cls, value: Union[datetime.date, str, bytes, int, float]
+    ) -> Union[datetime.date, str]:
+        """ """
+        if not isinstance(value, str):
+            # default handler
+            return parse_date(value)
+
+        match = FHIR_DATE_PARTS.match(value)
+
+        if not match:
+            if not cls.regex.match(value):
+                raise DateError()
+        elif not match.groupdict().get("day"):
+            if (
+                match.groupdict().get("month")
+                and int(match.groupdict().get("month")) > 12
+            ):
+                raise DateError()
+            # we keep original
+            return value
+        return parse_date(value)
+
 
 class DateTime(datetime.datetime):
     """A date, date-time or partial date (e.g. just year or year + month) as used
@@ -216,15 +274,35 @@ class DateTime(datetime.datetime):
     def __get_validators__(cls) -> "CallableGenerator":
 
         yield cls.validate
-        yield parse_datetime
 
     @classmethod
-    def validate(cls, value):
+    def validate(
+        cls, value: Union[datetime.date, datetime.datetime, str, bytes, int, float]
+    ) -> Union[datetime.datetime, datetime.date, str]:
         """ """
-        if isinstance(value, str):
-            if not cls.regex.match(value):
-                raise ValueError
-        return value
+        if isinstance(value, datetime.date):
+            return value
+
+        if not isinstance(value, str):
+            # default handler
+            return parse_datetime(value)
+        match = FHIR_DATE_PARTS.match(value)
+        if match:
+            if (
+                match.groupdict().get("year")
+                and match.groupdict().get("month")
+                and match.groupdict().get("day")
+            ):
+                return parse_date(value)
+            elif match.groupdict().get("year") and match.groupdict().get("month"):
+                if int(match.groupdict().get("month")) > 12:
+                    raise DateError()
+            # we don't want to loose actual information, so keep as string
+            return value
+        if not cls.regex.match(value):
+            raise DateTimeError()
+
+        return parse_datetime(value)
 
 
 class Instant(datetime.datetime):
@@ -251,15 +329,14 @@ class Instant(datetime.datetime):
     def __get_validators__(cls) -> "CallableGenerator":
 
         yield cls.validate
-        yield parse_datetime
 
     @classmethod
     def validate(cls, value):
         """ """
         if isinstance(value, str):
             if not cls.regex.match(value):
-                raise ValueError
-        return value
+                raise DateTimeError()
+        return parse_datetime(value)
 
 
 class Time(datetime.time):
@@ -277,15 +354,15 @@ class Time(datetime.time):
     def __get_validators__(cls) -> "CallableGenerator":
 
         yield cls.validate
-        yield parse_time
 
     @classmethod
     def validate(cls, value):
         """ """
         if isinstance(value, str):
             if not cls.regex.match(value):
-                raise ValueError
-        return value
+                raise TimeError()
+
+        return parse_time(value)
 
 
 def get_fhir_type_class(model_name):
