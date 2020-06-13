@@ -182,7 +182,7 @@ class Url(AnyUrl):
         if value.startswith("mailto:"):
             schema = value[0:7]
             email = value[7:]
-            realname = parseaddr(email)
+            realname = parseaddr(email)[0]
             name, email = validate_email(email)
             if realname:
                 email = formataddr((name, email))
