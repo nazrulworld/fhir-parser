@@ -175,7 +175,7 @@ class Url(AnyUrl):
     __visit_name__ = "url"
 
     @classmethod
-    def validate(
+    def validate(  # type: ignore
         cls, value: str, field: "ModelField", config: "BaseConfig"
     ) -> Union["AnyUrl", str]:
         """ """
@@ -242,7 +242,7 @@ class Date(datetime.date):
         elif not match.groupdict().get("day"):
             if (
                 match.groupdict().get("month")
-                and int(match.groupdict().get("month")) > 12
+                and int(match.groupdict()["month"]) > 12
             ):
                 raise DateError()
             # we keep original
@@ -295,7 +295,7 @@ class DateTime(datetime.datetime):
             ):
                 return parse_date(value)
             elif match.groupdict().get("year") and match.groupdict().get("month"):
-                if int(match.groupdict().get("month")) > 12:
+                if int(match.groupdict()["month"]) > 12:
                     raise DateError()
             # we don't want to loose actual information, so keep as string
             return value
