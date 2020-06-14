@@ -74,8 +74,9 @@ def base_settings():
     with zipfile.ZipFile(example_data_file_location) as z:
         z.extractall(temp_data_dir)
 
+    zip_dir_name = pathlib.Path(EXAMPLE_RESOURCES_URL).name[:-4]
     if "FHIR_UNITTEST_DATADIR" not in os.environ:
-        os.environ.setdefault("FHIR_UNITTEST_DATADIR", temp_data_dir)
+        os.environ.setdefault("FHIR_UNITTEST_DATADIR", os.path.join(temp_data_dir, zip_dir_name))
 
     settings["unittest_data_dir"] = pathlib.Path(os.environ["FHIR_UNITTEST_DATADIR"])
 
