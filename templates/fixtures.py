@@ -11,8 +11,8 @@ from os.path import dirname
 import pytest  # type: ignore
 
 EXAMPLE_RESOURCES_URL = (
-    "https://github.com/nazrulworld/fhir-parser/raw/"
-    "master/archives/HL7/FHIR/{{release}}/"
+    "https://github.com/nazrulworld/hl7-archives/raw/"
+    "0.1.0/FHIR/{{release}}/"
     "{{fhir_version}}-examples-json.zip"
 )
 ROOT_PATH = dirname(dirname(dirname(dirname(os.path.abspath(__file__)))))
@@ -76,7 +76,9 @@ def base_settings():
 
     zip_dir_name = pathlib.Path(EXAMPLE_RESOURCES_URL).name[:-4]
     if "FHIR_UNITTEST_DATADIR" not in os.environ:
-        os.environ.setdefault("FHIR_UNITTEST_DATADIR", os.path.join(temp_data_dir, zip_dir_name))
+        os.environ.setdefault(
+            "FHIR_UNITTEST_DATADIR", os.path.join(temp_data_dir, zip_dir_name)
+        )
 
     settings["unittest_data_dir"] = pathlib.Path(os.environ["FHIR_UNITTEST_DATADIR"])
 

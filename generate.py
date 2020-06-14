@@ -101,9 +101,9 @@ def main(
             "UNITTEST_TARGET_DIRECTORY": settings.UNITTEST_TARGET_DIRECTORY,
             "CURRENT_RELEASE_NAME": settings.CURRENT_RELEASE_NAME
         }
-        ORG_SPECIFICATION_URL = settings.SPECIFICATION_URL
-        ORG_RESOURCE_TARGET_DIRECTORY = settings.RESOURCE_TARGET_DIRECTORY
-        ORG_UNITTEST_TARGET_DIRECTORY = settings.UNITTEST_TARGET_DIRECTORY
+        if getattr(settings, "FHIR_EXAMPLE_DIRECTORY", None):
+            originals["FHIR_EXAMPLE_DIRECTORY"] = settings.FHIR_EXAMPLE_DIRECTORY
+
         for pv in previous_versions:
             # reset cache, important!
             fhirspec.FHIRClass.__known_classes__ = {}
@@ -113,20 +113,8 @@ def main(
                 "UNITTEST_TARGET_DIRECTORY": originals["UNITTEST_TARGET_DIRECTORY"].parent / pv / originals["UNITTEST_TARGET_DIRECTORY"].name,
                 "CURRENT_RELEASE_NAME": pv
             }
-            # settings["CURRENT_RELEASE_NAME"] = pv
-            # settings["SPECIFICATION_URL"] = "/".join([settings.FHIR_BASE_URL, pv])
-            #
-            # settings["RESOURCE_TARGET_DIRECTORY"] = ORG_RESOURCE_TARGET_DIRECTORY / pv
-            #
-            # settings["FACTORY_TARGET_NAME"] = (
-            #     ORG_FACTORY_TARGET_NAME.parent / pv / ORG_FACTORY_TARGET_NAME.name
-            # )
-            #
-            # settings["UNITTEST_TARGET_DIRECTORY"] = (
-            #     ORG_UNITTEST_TARGET_DIRECTORY.parent
-            #     / pv
-            #     / ORG_UNITTEST_TARGET_DIRECTORY.name
-            # )
+            if "FHIR_EXAMPLE_DIRECTORY" in originals:
+                customs["FHIR_EXAMPLE_DIRECTORY"] = originals["FHIR_EXAMPLE_DIRECTORY"].parent / pv
             settings.update(customs)
             spec_source = load(
                 settings, force_download=force_download, cache_only=cache_only
@@ -139,11 +127,6 @@ def main(
         # restore originals
         fhirspec.FHIRClass.__known_classes__ = {}
         settings.update(originals)
-        # settings["CURRENT_RELEASE_NAME"] = current_version
-        # settings["SPECIFICATION_URL"] = ORG_SPECIFICATION_URL
-        # settings["RESOURCE_TARGET_DIRECTORY"] = ORG_FACTORY_TARGET_NAME
-        # settings["FACTORY_TARGET_NAME"] = ORG_FACTORY_TARGET_NAME
-        # settings["UNITTEST_TARGET_DIRECTORY"] = ORG_UNITTEST_TARGET_DIRECTORY
 
     return 0
 
