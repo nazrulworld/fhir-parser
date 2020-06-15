@@ -11,6 +11,7 @@ Revision: {{ info.revision }}
 {%- endif %}
 Last updated: {{ profile.fhir_last_updated }}
 """
+from pydantic.validators import bytes_validator  # noqa: F401
 from .. import fhirtypes  # noqa: F401
 from .. import {{ class.module }}
 
@@ -21,8 +22,8 @@ def impl_{{ class.name | lower }}_{{ loop.index }}(inst):
 {%- for onetest in tcase.tests %}
 {%- if onetest.klass.name in ("String", "Code", "Id", "Uri", "Oid", "Xhtml", "Uuid", "Canonical", "Url", "Markdown") %}
     assert inst.{{ onetest.path }} == {{ custom_mac.pep8_string_wrap(onetest.value | replace('"', '\\"') | replace('\\n', '\\\\n'), width=60, to_json=False).rstrip()}}
-{%- else %}{% if onetest.klass.name == "base64Binary" %}
-    assert inst.{{ onetest.path }} == bytes_validator("{{ onetest.value }}")
+{%- else %}{% if onetest.klass.name == "Base64Binary" %}
+    assert inst.{{ onetest.path }} == bytes_validator({{ custom_mac.pep8_string_wrap(onetest.value, width=60, to_json=False).rstrip() }})
 {%- else %}{% if onetest.klass.name in ("Integer", "UnsignedInt", "PositiveInt") %}
     assert inst.{{ onetest.path }} == {{ onetest.value }}
 {%- else %}{% if onetest.klass.name in ("Decimal", "NSDecimalNumber") %}
@@ -36,7 +37,9 @@ def impl_{{ class.name | lower }}_{{ loop.index }}(inst):
 {%- else %}{% if onetest.klass.name in ("DateTime", "Instant", "Date", "Time") %}
     assert inst.{{ onetest.path }} == {{ onetest.klass.module }}.{{ onetest.klass.name }}.validate("{{ onetest.value }}")
 {%- else %}
-    # Don't know how to create unit test for "{{ onetest.path }}", which is a {{ onetest.klass.name }}
+    # Don't know how to create unit test
+    # for "{{ onetest.path }}",
+    # which is a {{ onetest.klass.name }}
 {%- endif %}{% endif %}{% endif %}{% endif %}{% endif %}{% endif %}
 {%- endfor %}
 
