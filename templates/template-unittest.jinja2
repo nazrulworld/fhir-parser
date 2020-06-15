@@ -1,3 +1,4 @@
+{% import 'macros.jinja2' as custom_mac -%}
 # -*- coding: utf-8 -*-
 """
 Profile: {{ profile.url }}
@@ -19,7 +20,7 @@ from .. import {{ class.module }}
 def impl_{{ class.name | lower }}_{{ loop.index }}(inst):
 {%- for onetest in tcase.tests %}
 {%- if onetest.klass.name in ("String", "Code", "Id", "Uri", "Oid", "Xhtml", "Uuid", "Canonical", "Url", "Markdown") %}
-    assert inst.{{ onetest.path }} == "{{ onetest.value | replace('"', '\\"') | replace('\\n', '\\\\n') }}"
+    assert inst.{{ onetest.path }} == {{ custom_mac.pep8_string_wrap(onetest.value | replace('"', '\\"') | replace('\\n', '\\\\n'), width=60).rstrip()}}
 {%- else %}{% if onetest.klass.name == "base64Binary" %}
     assert inst.{{ onetest.path }} == bytes_validator("{{ onetest.value }}")
 {%- else %}{% if onetest.klass.name in ("Integer", "UnsignedInt", "PositiveInt") %}

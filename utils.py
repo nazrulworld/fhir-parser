@@ -3,6 +3,9 @@ from fhirspec import FHIRSpecWriter
 import fhirrenderer
 
 
+__author__ = "Md Nazrul Islam <email2nazrul@gmail.com>"
+
+
 def ensure_init_py(settings, version_info):
     """ """
     init_tpl = """# -*- coding: utf-8 -*-\n\n__fhir_version__ = "{0}"\n""".format(
@@ -56,7 +59,9 @@ def update_pytest_fixture(settings):
             elif "CACHE_PATH =" in line:
                 parts = list()
                 parts.append(line.split("=")[0])
-                parts.append(f"os.path.join(ROOT_PATH, '.cache', '{settings.CURRENT_RELEASE_NAME}')\n")
+                parts.append(
+                    f"os.path.join(ROOT_PATH, '.cache', '{settings.CURRENT_RELEASE_NAME}')\n"
+                )
                 line = "= ".join(parts)
 
             lines.append(line)
@@ -65,7 +70,9 @@ def update_pytest_fixture(settings):
     fixture_file.write_text("".join(lines))
 
     with open(
-        str(settings.RESOURCE_TARGET_DIRECTORY / "tests" / "conftest.py"), "w", encoding="utf-8"
+        str(settings.RESOURCE_TARGET_DIRECTORY / "tests" / "conftest.py"),
+        "w",
+        encoding="utf-8",
     ) as fp:
         fp.write(
             "# -*- coding: utf-8 _*_\n"
@@ -92,12 +99,13 @@ def get_cached_version_info(spec_source):
 
 
 class ResourceWriter(FHIRSpecWriter):
-
     def write(self):
         """
         """
         if self.settings.WRITE_RESOURCES:
-            renderer = fhirrenderer.FHIRStructureDefinitionRenderer(self.spec, self.settings)
+            renderer = fhirrenderer.FHIRStructureDefinitionRenderer(
+                self.spec, self.settings
+            )
             renderer.render()
 
             vsrenderer = fhirrenderer.FHIRValueSetRenderer(self.spec, self.settings)

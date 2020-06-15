@@ -10,9 +10,22 @@ from fhirspec import FHIR_CLASS_TYPES
 from fhirspec import FHIRClass
 
 from jinja2 import Environment, PackageLoader, TemplateNotFound
-from jinja2.filters import environmentfilter
+from textwrap import TextWrapper
+from jinja2.filters import contextfilter
+from jinja2.filters import htmlsafe_json_dumps
+
 from logger import logger
 import io
+
+
+@contextfilter
+def string_wrap(ctx, value, width=88):
+    """ """
+    if not value:
+        return value
+    wrapper = TextWrapper(width=width, replace_whitespace=False, tabsize=4)
+    new_value = map(lambda x: htmlsafe_json_dumps(x), wrapper.wrap(value))
+    return list(new_value)
 
 
 def include_file(file_location):
@@ -29,8 +42,9 @@ class FHIRRenderer(object):
         self.spec = spec
         self.settings = settings
         self.jinjaenv = Environment(
-            loader=PackageLoader("generate", self.settings.TEMPLATE_DIRECTORY)
+            loader=PackageLoader("generate", self.settings.TEMPLATE_DIRECTORY),
         )
+        self.jinjaenv.filters["string_wrap"] = string_wrap
 
     def render(self):
         """ The main rendering start point, for subclasses to override.

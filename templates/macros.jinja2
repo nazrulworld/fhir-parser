@@ -1,0 +1,11 @@
+{% macro pep8_string_wrap(value='', width=80) -%}
+{% set prepared_val = value|string_wrap(width) -%}
+{% if prepared_val|length > 1 -%}(
+    {% for itm in  prepared_val -%}
+        {{ itm }}
+    {% endfor -%}
+    )
+{% else -%}
+{{ prepared_val[0] }}
+{% endif -%}
+{% endmacro -%}

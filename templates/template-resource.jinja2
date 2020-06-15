@@ -1,3 +1,4 @@
+{% import 'macros.jinja2' as custom_mac -%}
 # -*- coding: utf-8 -*-
 """
 Profile: {{ profile.url }}
@@ -56,12 +57,12 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
     {{ prop.name }}: {{ type_klass }} = Field(
 		{% if prop.nonoptional and not prop.one_of_many %}...{% else %}None{% endif %},
 		alias="{{ prop.orig_name }}",
-		title={{ title|trim|replace("\n", "")|tojson }},
-		description={{ prop.short|tojson }},
+		title={{ custom_mac.pep8_string_wrap(title|trim|replace("\n", ""), width=70).rstrip()}},
+		description={{ custom_mac.pep8_string_wrap(prop.short, width=70).rstrip()}}{%- if prop.one_of_many%},{% endif %}
         {%- if prop.one_of_many%}
 		one_of_many="{{ prop.one_of_many }}", # Choice of Data Types. i.e value[x]
 		one_of_many_required={% if prop.nonoptional %}True{% else %}False{% endif %}
-        {% endif -%}
+        {%- endif %}
 	)
 
 {%- endfor %}
