@@ -5,8 +5,6 @@ class {{ klass.name }}Type(AbstractType):
     __resource_type__ = "{{ klass.name }}"
 {% endif -%}{% endfor %}
 __all__ = [
-    "get_validator_for_fhir_type",
-    "add_validator_for_fhir_type",
     "ElementType",
     "ResourceType",
     {%- for klass in classes %}

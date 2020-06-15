@@ -87,9 +87,9 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
 	        {%- for prefix in one_of_many_fields[klass.name] %}
 			"{{ prefix }}": [
 				{%- for field in one_of_many_fields[klass.name][prefix] %}
-			    "{{ field }}",
+			    "{{ field }}"{% if not loop.last -%},{% endif -%}
 				{% endfor -%}
-		    ],
+		    ]{% if not loop.last -%},{% endif -%}
 	        {% endfor -%}
 	    }
         for prefix, fields in one_of_many_fields.items():

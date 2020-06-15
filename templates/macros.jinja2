@@ -1,5 +1,5 @@
-{% macro pep8_string_wrap(value='', width=80) -%}
-{% set prepared_val = value|string_wrap(width) -%}
+{% macro pep8_string_wrap(value='', width=80, to_json=True) -%}
+{% set prepared_val = value|string_wrap(width, to_json) -%}
 {% if prepared_val|length > 1 -%}(
     {% for itm in  prepared_val -%}
         {{ itm }}

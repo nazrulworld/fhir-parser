@@ -5,7 +5,7 @@ import io
 import os
 import re
 import shutil
-import textwrap
+import json
 from fhirspec import FHIR_CLASS_TYPES
 from fhirspec import FHIRClass
 
@@ -19,12 +19,19 @@ import io
 
 
 @contextfilter
-def string_wrap(ctx, value, width=88):
+def string_wrap(ctx, value, width=88, to_json=True):
     """ """
+    def simple_wrap(v):
+        return f'"{v}"'
     if not value:
         return value
-    wrapper = TextWrapper(width=width, replace_whitespace=False, tabsize=4)
-    new_value = map(lambda x: htmlsafe_json_dumps(x), wrapper.wrap(value))
+    if to_json is True:
+        dumper = htmlsafe_json_dumps
+    else:
+        dumper = simple_wrap
+
+    wrapper = TextWrapper(width=width, replace_whitespace=True, drop_whitespace=False, tabsize=4)
+    new_value = map(lambda x: dumper(x), wrapper.wrap(value))
     return list(new_value)
 
 
