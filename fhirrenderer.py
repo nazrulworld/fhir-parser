@@ -186,13 +186,7 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                     ):
                         prop.field_type = prop.class_name + "Type"
                     elif prop_klass.class_type == FHIR_CLASS_TYPES.primitive_type:
-                        if prop_klass.name not in (
-                            "Boolean",
-                            "Integer",
-                            "UnsignedInt",
-                            "PositiveInt",
-                        ):
-                            prop.need_primitive_ext = True
+                        prop.need_primitive_ext = True
 
                     if prop_klass.class_type != FHIR_CLASS_TYPES.other:
                         prop.field_type_module = "fhirtypes"
