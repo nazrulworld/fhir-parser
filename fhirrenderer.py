@@ -21,8 +21,10 @@ import io
 @contextfilter
 def string_wrap(ctx, value, width=88, to_json=True):
     """ """
+
     def simple_wrap(v):
         return f'"{v}"'
+
     if not value:
         return value
     if to_json is True:
@@ -30,7 +32,9 @@ def string_wrap(ctx, value, width=88, to_json=True):
     else:
         dumper = simple_wrap
 
-    wrapper = TextWrapper(width=width, replace_whitespace=True, drop_whitespace=False, tabsize=4)
+    wrapper = TextWrapper(
+        width=width, replace_whitespace=True, drop_whitespace=False, tabsize=4
+    )
     new_value = map(lambda x: dumper(x), wrapper.wrap(value))
     return list(new_value)
 
@@ -49,7 +53,7 @@ class FHIRRenderer(object):
         self.spec = spec
         self.settings = settings
         self.jinjaenv = Environment(
-            loader=PackageLoader("generate", self.settings.TEMPLATE_DIRECTORY),
+            loader=PackageLoader("generate", self.settings.TEMPLATE_DIRECTORY)
         )
         self.jinjaenv.filters["string_wrap"] = string_wrap
 
@@ -162,9 +166,13 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
             need_fhirtypes: bool = False
             has_one_of_many = False
             has_array_type = False
+            need_union_type = False
             one_of_many_fields = dict()
             for klass in classes:
                 for prop in klass.properties:
+                    # special variable
+                    prop.need_primitive_ext = False
+
                     if not prop.is_native and need_fhirtypes is False:
                         need_fhirtypes = True
                     if prop.is_array and has_array_type is False:
@@ -177,9 +185,25 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                         FHIR_CLASS_TYPES.complex_type,
                     ):
                         prop.field_type = prop.class_name + "Type"
+                    elif prop_klass.class_type == FHIR_CLASS_TYPES.primitive_type:
+                        if prop_klass.name not in (
+                            "Boolean",
+                            "Integer",
+                            "UnsignedInt",
+                            "PositiveInt",
+                        ):
+                            prop.need_primitive_ext = True
 
                     if prop_klass.class_type != FHIR_CLASS_TYPES.other:
                         prop.field_type_module = "fhirtypes"
+
+                    # Check for Union Type
+                    if (
+                        prop.need_primitive_ext is True
+                        and prop.is_array
+                        and need_union_type is False
+                    ):
+                        need_union_type = True
                     # check for one_of_many
                     if prop.one_of_many:
                         if has_one_of_many is False:
@@ -202,6 +226,7 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                 "fhir_class_types": FHIR_CLASS_TYPES,
                 "one_of_many_fields": one_of_many_fields,
                 "has_one_of_many": has_one_of_many,
+                "need_union_type": need_union_type
             }
             ptrn = (
                 profile.targetname.lower()

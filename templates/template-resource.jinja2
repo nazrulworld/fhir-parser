@@ -13,6 +13,9 @@ Last updated: {{ profile.fhir_last_updated }}
 """
 {%- if has_array_type %}
 from typing import List as ListType
+{%- endif %}
+{%- if need_union_type %}
+from typing import Union
 {% endif %}
 from pydantic import Field
 {%- if has_one_of_many %}
@@ -26,7 +29,6 @@ from . import fhirtypes
 {%- set imported = {} %}
 {%- for klass in classes %}
 
-
 {% if klass.superclass in imports and klass.superclass.module not in imported -%}
 from . import {{ klass.superclass.module }}
 {% set _ = imported.update({klass.superclass.module: True}) %}
@@ -34,7 +36,11 @@ from . import {{ klass.superclass.module }}
 
 class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.module }}.{% endif -%}
     {{ klass.superclass.name|default('object')}}):
-    """ {{ klass.short|wordwrap(width=75, wrapstring="\n    ") }}.
+    """Disclaimer: Any field name ends with ``__ext`` does't part of
+    Resource StructureDefinition, instead used to enable Extensibility feature
+    for FHIR Primitive Data Types.
+
+    {{ klass.short|wordwrap(width=75, wrapstring="\n    ") }}.
 {%- if klass.formal %}
     {{ klass.formal|wordwrap(width=75, wrapstring="\n    ") }}
 {%- endif %}
@@ -64,6 +70,13 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
 		one_of_many_required={% if prop.nonoptional %}True{% else %}False{% endif %}
         {%- endif %}
 	)
+    {%- if prop.need_primitive_ext and klass.name != "Extension" %}
+    {{ prop.orig_name }}__ext: {% if prop.is_array %}ListType[Union[fhirtypes.ExtensionType, None]]{% else %}fhirtypes.ExtensionType{% endif %} = Field(
+        None,
+        alias="_{{ prop.orig_name }}",
+        title="Extension field for ``{{ prop.name }}``."
+    )
+    {%- endif %}
 
 {%- endfor %}
 {% if klass.name in one_of_many_fields %}
