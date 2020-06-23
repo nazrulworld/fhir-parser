@@ -185,7 +185,7 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                         FHIR_CLASS_TYPES.complex_type,
                     ):
                         prop.field_type = prop.class_name + "Type"
-                    elif prop_klass.class_type == FHIR_CLASS_TYPES.primitive_type:
+                    elif prop_klass.class_type == FHIR_CLASS_TYPES.primitive_type or prop.is_native:
                         prop.need_primitive_ext = True
 
                     if prop_klass.class_type != FHIR_CLASS_TYPES.other:

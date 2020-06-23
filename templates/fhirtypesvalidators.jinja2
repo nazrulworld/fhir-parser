@@ -12,6 +12,7 @@ from .fhirabstractmodel import FHIRAbstractModel
 __author__ = "Md Nazrul Islam<email2nazrul@gmail.com>"
 
 MODEL_CLASSES = {
+     "FHIRPrimitiveExtension": (None, ".fhirprimitiveextension"),
      {%- for klass in classes %}
      "{{ klass.name }}": (None, ".{{klass.module }}"),
      {% endfor -%}
@@ -52,6 +53,10 @@ def fhir_model_validator(model_name: str, v: Union[StrBytes, dict, Path, FHIRAbs
         raise ValueError
     return v
 
+def fhirprimitiveextension_validator(v: Union[StrBytes, dict, Path, FHIRAbstractModel]):
+
+    return fhir_model_validator("FHIRPrimitiveExtension", v)
+
 
 {%- for klass in classes %}
 def {{ klass.name | lower }}_validator(v: Union[StrBytes, dict, Path, FHIRAbstractModel]):
@@ -60,6 +65,7 @@ def {{ klass.name | lower }}_validator(v: Union[StrBytes, dict, Path, FHIRAbstra
 {% endfor -%}
 
 __all__ = [
+    "fhirprimitiveextension_validator",
     {%- for klass in classes %}
 	"{{ klass.name | lower }}_validator",
 	{% endfor -%}

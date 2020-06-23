@@ -5,6 +5,27 @@ class {{ klass.name }}Type(AbstractType):
     __resource_type__ = "{{ klass.name }}"
 {% endif -%}{% endfor %}
 __all__ = [
+    "Boolean",
+    "String",
+    "Base64Binary",
+    "Code",
+    "Id",
+    "Decimal",
+    "Integer",
+    "UnsignedInt",
+    "PositiveInt",
+    "Uri",
+    "Oid",
+    "Uuid",
+    "Canonical",
+    "Url",
+    "Markdown",
+    "Xhtml",
+    "Date",
+    "DateTime",
+    "Instant",
+    "Time",
+    "FHIRPrimitiveExtensionType",
     "ElementType",
     "ResourceType",
     {%- for klass in classes %}

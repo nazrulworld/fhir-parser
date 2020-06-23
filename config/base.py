@@ -236,6 +236,7 @@ MANUAL_PROFILES = [
         ["FHIRResourceModel"],
     ),
     ("templates/fhirabstractmodel.py", "fhirabstractmodel", ["FHIRAbstractModel"]),
+    ("templates/fhirprimitiveextension.py", "fhirprimitiveextension", ["FHIRPrimitiveExtension"]),
     ("templates/fhirtypes.py", "fhirtypes", FHIR_PRIMITIVES),
 ]
 RESOURCES_WRITER_CLASS = "utils.ResourceWriter"

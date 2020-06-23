@@ -414,6 +414,12 @@ class AbstractType(dict):
         return cls.__resource_type__
 
 
+class FHIRPrimitiveExtensionType(AbstractType):
+    """ """
+
+    __resource_type__ = "FHIRPrimitiveExtension"
+
+
 class AbstractBaseType(dict):
     """ """
 
