@@ -12,7 +12,7 @@ from fhirspec import FHIRClass
 from jinja2 import Environment, PackageLoader, TemplateNotFound
 from textwrap import TextWrapper
 from jinja2.filters import contextfilter
-from jinja2.filters import htmlsafe_json_dumps
+from markupsafe import Markup
 
 from logger import logger
 import io
@@ -24,6 +24,10 @@ def string_wrap(ctx, value, width=88, to_json=True):
 
     def simple_wrap(v):
         return f'"{v}"'
+
+    def htmlsafe_json_dumps(v):
+        rv = json.dumps(v)
+        return Markup(rv)
 
     if not value:
         return value
