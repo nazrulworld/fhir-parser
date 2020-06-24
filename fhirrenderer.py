@@ -185,7 +185,10 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                         FHIR_CLASS_TYPES.complex_type,
                     ):
                         prop.field_type = prop.class_name + "Type"
-                    elif prop_klass.class_type == FHIR_CLASS_TYPES.primitive_type or prop.is_native:
+                    elif (
+                        prop_klass.class_type == FHIR_CLASS_TYPES.primitive_type
+                        or prop.is_native
+                    ):
                         prop.need_primitive_ext = True
 
                     if prop_klass.class_type != FHIR_CLASS_TYPES.other:
@@ -209,6 +212,14 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                         one_of_many_fields[klass.name][prop.one_of_many].append(
                             prop.name
                         )
+                    # Check Enums
+                    if prop.field_type == "Code" and prop.short and "|" in prop.short:
+                        prop.enum = list(
+                            map(lambda x: x.strip(), prop.short.split("|"))
+                        )
+                    else:
+                        prop.enum = list()
+
             data = {
                 "profile": profile,
                 "release_name": self.spec.settings.CURRENT_RELEASE_NAME,
@@ -220,7 +231,7 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                 "fhir_class_types": FHIR_CLASS_TYPES,
                 "one_of_many_fields": one_of_many_fields,
                 "has_one_of_many": has_one_of_many,
-                "need_union_type": need_union_type
+                "need_union_type": need_union_type,
             }
             ptrn = (
                 profile.targetname.lower()

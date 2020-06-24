@@ -55,19 +55,24 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
 	{%- set type_klass %}
 		{%- if prop.is_array %}ListType[{{ type_klass_ }}]{% else %}{{ type_klass_ }}{% endif -%}
 	{% endset %}
-	{%- set title %}
-		{% if prop.is_array %}List of{% else %}Type{% endif %} `{{ prop.class_name }}`{% if prop.is_array %} items{% endif %}
-		{%- if prop.reference_to_names|length > 0 %} referencing `{{ prop.reference_to_names|join(', ') }}`{% endif %}
-		{%- if prop.field_type.endswith("Type") %} (represented as `{{ prop.json_class }}` in JSON){% endif %}
-	{% endset %}
     {{ prop.name }}: {{ type_klass }} = Field(
 		{% if prop.nonoptional and not prop.one_of_many %}...{% else %}None{% endif %},
 		alias="{{ prop.orig_name }}",
-		title={{ custom_mac.pep8_string_wrap(title|trim|replace("\n", ""), width=70).rstrip()}},
-		description={{ custom_mac.pep8_string_wrap(prop.short, width=70).rstrip()}}{%- if prop.one_of_many%},{% endif %}
+		title={% if prop.short%}{{ custom_mac.pep8_string_wrap(prop.short, width=70).rstrip()}}{% else %}None{% endif %},
+		description={% if prop.formal%}{{ custom_mac.pep8_string_wrap(prop.formal, width=70).rstrip()}}{% else %}None{% endif %},
         {%- if prop.one_of_many%}
-		one_of_many="{{ prop.one_of_many }}", # Choice of Data Types. i.e value[x]
-		one_of_many_required={% if prop.nonoptional %}True{% else %}False{% endif %}
+        # Choice of Data Types. i.e {{ prop.one_of_many }}[x]
+		one_of_many="{{ prop.one_of_many }}",
+		one_of_many_required={% if prop.nonoptional %}True{% else %}False{% endif %},
+        {%- endif %}
+        {%- if prop.enum|length > 0 %}
+        # note: Enum values can be used in validation,
+        # but use in your own responsibilities, read official FHIR documentation.
+		enum_values={{ prop.enum|tojson }},
+        {%- endif %}
+        {%- if prop.reference_to_names|length > 0 %}
+        # note: Listed Resource Type(s) should be allowed as Reference.
+		enum_reference_types={{ prop.reference_to_names|tojson }},
         {%- endif %}
 	)
     {%- if prop.need_primitive_ext and klass.name != "Extension" %}
