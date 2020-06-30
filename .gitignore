@@ -9,6 +9,8 @@ env
 # ignore downloads
 /downloads
 /config/base_local.py
+/.cache
+/fhir
 # Editors
 .idea
 .vscode
