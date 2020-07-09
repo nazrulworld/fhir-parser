@@ -218,9 +218,12 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                         )
                     # Check Enums
                     if prop.field_type == "Code" and prop.short and "|" in prop.short:
-                        prop.enum = list(
-                            map(lambda x: x.strip(), prop.short.split("|"))
-                        )
+                        prop.enum = enum_list = list()
+                        for item in map(lambda x: x.strip(), prop.short.split("|")):
+                            parts = item.split(" ")
+                            enum_list.append(parts[0])
+                            if len(parts) == 2 and parts[1] == "+":
+                                enum_list.append(parts[1])
                     else:
                         prop.enum = list()
 
