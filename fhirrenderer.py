@@ -150,7 +150,14 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
         ]
         all_classes = sorted(all_classes, key=lambda x: x.name)
         target_path = self.settings.RESOURCE_TARGET_DIRECTORY / "fhirtypes.py"
-        self.do_render({"classes": all_classes}, "fhirtypes.jinja2", target_path)
+        self.do_render(
+            {
+                "classes": all_classes,
+                "release_name": self.spec.settings.CURRENT_RELEASE_NAME
+            },
+            "fhirtypes.jinja2",
+            target_path,
+        )
 
     def render(self):
         for profile in self.spec.writable_profiles():

@@ -1,4 +1,4 @@
-{% include "fhirtypes.py" %}
+{% include "fhirtypes.py" with context %}
 {%- for klass in classes %}
 {% if klass.name not in ("Element", "Resource") %}
 class {{ klass.name }}Type(AbstractType):

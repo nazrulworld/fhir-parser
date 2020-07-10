@@ -32,9 +32,9 @@ FHIR_DATE_PARTS = re.compile(r"(?P<year>\d{4})(-(?P<month>\d{2}))?(-(?P<day>\d{2
 
 class Primitive:
     """FHIR Primitive Data Type Base Class"""
-
-    regex: Optional[Pattern[str]] = None
+    __fhir_release__: str = "{{release_name}}"
     __visit_name__: Optional[str] = None
+    regex: Optional[Pattern[str]] = None
 
     @classmethod
     def is_primitive(cls) -> bool:
@@ -390,7 +390,7 @@ def get_fhir_type_class(model_name):
 
 class AbstractType(dict):
     """ """
-
+    __fhir_release__: str = "{{release_name}}"
     __resource_type__: str = ...  # type: ignore
 
     @classmethod
@@ -422,7 +422,7 @@ class FHIRPrimitiveExtensionType(AbstractType):
 
 class AbstractBaseType(dict):
     """ """
-
+    __fhir_release__: str = "{{release_name}}"
     __resource_type__: str = ...  # type: ignore
 
     @classmethod
