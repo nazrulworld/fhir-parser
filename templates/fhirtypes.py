@@ -28,10 +28,33 @@ if TYPE_CHECKING:
 __author__ = "Md Nazrul Islam<email2nazrul@gmail.com>"
 
 FHIR_DATE_PARTS = re.compile(r"(?P<year>\d{4})(-(?P<month>\d{2}))?(-(?P<day>\d{2}))?$")
+FHIR_PRIMITIVES = [
+    "boolean",
+    "string",
+    "base64Binary",
+    "code",
+    "id",
+    "decimal",
+    "integer",
+    "unsignedInt",
+    "positiveInt",
+    "uri",
+    "oid",
+    "uuid",
+    "canonical",
+    "url",
+    "markdown",
+    "xhtml",
+    "date",
+    "dateTime",
+    "instant",
+    "time",
+]
 
 
 class Primitive:
     """FHIR Primitive Data Type Base Class"""
+
     __fhir_release__: str = "{{release_name}}"
     __visit_name__: Optional[str] = None
     regex: Optional[Pattern[str]] = None
@@ -209,6 +232,9 @@ class Url(AnyUrl, Primitive):
             return schema + email
         elif value.startswith("mllp:") or value.startswith("llp:"):
             # xxx: find validation
+            return value
+        elif value in FHIR_PRIMITIVES:
+            # Extensions may contain a valueUrl for a primitive FHIR type
             return value
 
         return AnyUrl.validate(value, field, config)
@@ -390,6 +416,7 @@ def get_fhir_type_class(model_name):
 
 class AbstractType(dict):
     """ """
+
     __fhir_release__: str = "{{release_name}}"
     __resource_type__: str = ...  # type: ignore
 
@@ -422,6 +449,7 @@ class FHIRPrimitiveExtensionType(AbstractType):
 
 class AbstractBaseType(dict):
     """ """
+
     __fhir_release__: str = "{{release_name}}"
     __resource_type__: str = ...  # type: ignore
 
@@ -438,11 +466,11 @@ class AbstractBaseType(dict):
         """ """
         if isinstance(v, (bytes, str)):
             input_data = load_str_bytes(v)
-            resource_type = input_data.pop("resourceType", None)
+            resource_type = input_data.get("resourceType", None)
         elif isinstance(v, FHIRAbstractModel):
             resource_type = v.resource_type
         else:
-            resource_type = v.pop("resourceType", None)
+            resource_type = v.get("resourceType", None)
 
         if resource_type is None or resource_type == cls.__resource_type__:
             from . import fhirtypesvalidators
