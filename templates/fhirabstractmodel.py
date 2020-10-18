@@ -22,15 +22,6 @@ __author__ = "Md Nazrul Islam<email2nazrul@gmail.com>"
 logger = logging.getLogger(__name__)
 
 
-def orjson_dumps(v, *, default, option=0):
-    """orjson.dumps returns bytes, to match standard json.dumps we need to decode"""
-    params = {"default": default}
-    if option > 0:
-        params["option"] = option
-
-    return orjson.dumps(v, **params).decode()
-
-
 class WrongResourceType(PydanticValueError):
     code = "wrong.resource_type"
     msg_template = "Wrong ResourceType: {error}"
@@ -184,7 +175,7 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
             result["resourceType"] = self.resource_type
         return result
 
-    def json(
+    def json(  # type: ignore
         self,
         *,
         include: Union["AbstractSetIntStr", "MappingIntStrAny"] = None,
@@ -195,8 +186,9 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
         exclude_defaults: bool = False,
         exclude_none: bool = None,
         encoder: Optional[Callable[[Any], Any]] = None,
+        return_bytes: bool = False,
         **dumps_kwargs: Any,
-    ) -> str:
+    ) -> Union[str, bytes]:
         """ """
         if by_alias is None:
             by_alias = True
@@ -204,7 +196,7 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
         if exclude_none is None:
             exclude_none = True
 
-        if self.__config__.json_dumps == orjson_dumps:
+        if self.__config__.json_dumps == orjson.dumps:
             if "option" not in dumps_kwargs:
                 option = 0
                 if "indent" in dumps_kwargs:
@@ -225,7 +217,10 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
                 if option > 0:
                     dumps_kwargs = {"option": option}
 
-        return BaseModel.json(
+        if TYPE_CHECKING:
+            result: Union[str, bytes]
+
+        result = BaseModel.json(
             self,
             include=include,
             by_alias=by_alias,
@@ -236,6 +231,13 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
             encoder=encoder,
             **dumps_kwargs,
         )
+        if return_bytes is True:
+            if isinstance(result, str):
+                result = result.encode("utf-8", errors="strict")
+        else:
+            if isinstance(result, bytes):
+                result = result.decode()
+        return result
 
     @classmethod
     def construct(
