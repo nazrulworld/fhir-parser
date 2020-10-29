@@ -61,7 +61,7 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
 		description={% if prop.formal%}{{ custom_mac.pep8_string_wrap(prop.formal, width=70).rstrip()}}{% else %}None{% endif %},
         # if property is element of this resource.
         element_property=True,
-        {%- if prop.nonoptional and not prop.one_of_many and not prop.need_primitive_ext %}
+        {%- if prop.nonoptional and not prop.one_of_many and prop.need_primitive_ext %}
         element_required=True,
         {%- endif %}
         {%- if prop.one_of_many%}

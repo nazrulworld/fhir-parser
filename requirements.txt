@@ -4,5 +4,5 @@ requests>=2.13.0
 colorlog==2.10.0
 setuptools
 click
-fhirspec
+fhirspec==0.2.3
 pydantic
