@@ -153,7 +153,7 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
         self.do_render(
             {
                 "classes": all_classes,
-                "release_name": self.spec.settings.CURRENT_RELEASE_NAME
+                "release_name": self.spec.settings.CURRENT_RELEASE_NAME,
             },
             "fhirtypes.jinja2",
             target_path,
@@ -177,8 +177,12 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
             need_fhirtypes: bool = False
             has_one_of_many = False
             has_array_type = False
+            has_required_primitive_element = False
             need_union_type = False
+            need_typing = False
+            need_root_validator = False
             one_of_many_fields = dict()
+            required_primitive_element_fields = dict()
             for klass in classes:
                 for prop in klass.properties:
                     # special variable
@@ -233,7 +237,31 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                                 enum_list.append(parts[1])
                     else:
                         prop.enum = list()
+                    # check nooptional primitive element
+                    if (
+                        prop.need_primitive_ext
+                        and prop.nonoptional
+                        and not prop.one_of_many
+                        and klass.name != "Extension"
+                    ):
+                        if has_required_primitive_element is False:
+                            has_required_primitive_element = True
+                        if klass.name not in required_primitive_element_fields:
+                            required_primitive_element_fields[klass.name] = []
+                        required_primitive_element_fields[klass.name].append(
+                            (prop.orig_name, prop.orig_name + "__ext")
+                        )
 
+            if has_one_of_many or has_required_primitive_element:
+                need_root_validator = True
+
+            if (
+                need_union_type
+                or has_one_of_many
+                or has_required_primitive_element
+                or has_array_type
+            ):
+                need_typing = True
             data = {
                 "profile": profile,
                 "release_name": self.spec.settings.CURRENT_RELEASE_NAME,
@@ -246,6 +274,10 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                 "one_of_many_fields": one_of_many_fields,
                 "has_one_of_many": has_one_of_many,
                 "need_union_type": need_union_type,
+                "need_typing": need_typing,
+                "need_root_validator": need_root_validator,
+                "required_primitive_element_fields": required_primitive_element_fields,
+                "has_required_primitive_element": has_required_primitive_element
             }
             ptrn = (
                 profile.targetname.lower()
