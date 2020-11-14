@@ -43,6 +43,15 @@ def string_wrap(ctx, value, width=88, to_json=True):
     return list(new_value)
 
 
+@contextfilter
+def unique_func_name(ctx, func_name, klass_name):
+    """ """
+    unique_val = sum([ord(c) for c in klass_name])
+    if not func_name.endswith("_"):
+        func_name += "_"
+    return f"{func_name}{unique_val}"
+
+
 def include_file(file_location):
     """ """
     with io.open(file_location, "r") as fp:
@@ -60,6 +69,7 @@ class FHIRRenderer(object):
             loader=PackageLoader("generate", self.settings.TEMPLATE_DIRECTORY)
         )
         self.jinjaenv.filters["string_wrap"] = string_wrap
+        self.jinjaenv.filters["unique_func_name"] = unique_func_name
 
     def render(self):
         """ The main rendering start point, for subclasses to override.
@@ -277,7 +287,7 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                 "need_typing": need_typing,
                 "need_root_validator": need_root_validator,
                 "required_primitive_element_fields": required_primitive_element_fields,
-                "has_required_primitive_element": has_required_primitive_element
+                "has_required_primitive_element": has_required_primitive_element,
             }
             ptrn = (
                 profile.targetname.lower()
