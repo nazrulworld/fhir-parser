@@ -174,7 +174,6 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
         arg_list = list(sig.parameters.keys())
 
         if len(arg_list) != 2:
-            breakpoint()
             raise ConfigError(
                 f"Invalid signature for root validator {func_name}: {sig}"
                 ", should be: (cls, values)."
@@ -202,7 +201,7 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
                     index, (validator_config.skip_on_failure, validator_config.func)
                 )
         # inject to class
-        setattr(validator, "__manually_injected__", True)
+        setattr(validator, "__manually_injected__", True)  # noqa:B010
         setattr(cls, func_name, validator)
 
     @classmethod
