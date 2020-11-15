@@ -47,6 +47,7 @@ def string_wrap(ctx, value, width=88, to_json=True):
 def unique_func_name(ctx, func_name, klass_name):
     """ """
     unique_val = sum([ord(c) for c in klass_name])
+    unique_val += (ord(klass_name[0].lower()) + ord(klass_name[-1].upper()))
     if not func_name.endswith("_"):
         func_name += "_"
     return f"{func_name}{unique_val}"
