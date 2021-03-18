@@ -47,7 +47,7 @@ def string_wrap(ctx, value, width=88, to_json=True):
 def unique_func_name(ctx, func_name, klass_name):
     """ """
     unique_val = sum([ord(c) for c in klass_name])
-    unique_val += (ord(klass_name[0].lower()) + ord(klass_name[-1].upper()))
+    unique_val += ord(klass_name[0].lower()) + ord(klass_name[-1].upper())
     if not func_name.endswith("_"):
         func_name += "_"
     return f"{func_name}{unique_val}"
@@ -198,6 +198,15 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                 for prop in klass.properties:
                     # special variable
                     prop.need_primitive_ext = False
+                    if (
+                        klass.name in ("Resource", "Element")
+                        and self.settings.CURRENT_RELEASE_NAME == "R4"
+                        and prop.class_name == "String"
+                    ):
+                        # we force Resource.id type = Id
+                        prop.class_name = "Id"
+                        prop.field_type = "Id"
+                        prop.type_name = "id"
 
                     if not prop.is_native and need_fhirtypes is False:
                         need_fhirtypes = True
