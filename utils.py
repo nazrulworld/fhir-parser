@@ -24,7 +24,7 @@ def construct_fhir_element(
         klass = get_fhir_model_class(element_type)
     except KeyError:
         raise LookupError(
-            f"'{element_type}' is not valid FHIRModel (element type) name!"
+            f"'{1}' is not valid FHIRModel (element type) name!"
         )
     if isinstance(data, (str, bytes)):
         return klass.parse_raw(data, content_type="application/json")
@@ -40,7 +40,8 @@ __all__ = ["get_fhir_model_class", "construct_fhir_element"]
 def ensure_init_py(settings, version_info):
     """ """
     init_tpl = INIT_TPL.format(
-        version_info.version
+        version_info.version,
+        "element_type"
     )
 
     for file_location in [

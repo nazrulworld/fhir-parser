@@ -19,11 +19,6 @@ from pydantic.utils import ROOT_KEY, sequence_like
 
 from fhir.resources.utils import load_file, load_str_bytes, xml_dumps, yaml_dumps
 
-if typing.TYPE_CHECKING:
-    from pydantic.typing import TupleGenerator
-    from pydantic.types import StrBytes
-    from pydantic.typing import AnyCallable
-
 try:
     import orjson
 
@@ -51,7 +46,9 @@ except ImportError:
 
 
 if typing.TYPE_CHECKING:
-    from pydantic.typing import AbstractSetIntStr, MappingIntStrAny, DictStrAny
+    from pydantic.typing import TupleGenerator
+    from pydantic.types import StrBytes
+    from pydantic.typing import AnyCallable
     from pydantic.main import Model
 
 __author__ = "Md Nazrul Islam<email2nazrul@gmail.com>"
@@ -231,7 +228,9 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
         encoding: str = "utf8",
         proto: Protocol = None,
         allow_pickle: bool = False,
+        **extra,
     ) -> "Model":
+        extra.update({"cls": cls})
         obj = load_file(
             path,
             proto=proto,
@@ -239,6 +238,7 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
             encoding=encoding,
             allow_pickle=allow_pickle,
             json_loads=cls.__config__.json_loads,
+            **extra,
         )
         return cls.parse_obj(obj)
 
@@ -251,7 +251,9 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
         encoding: str = "utf8",
         proto: Protocol = None,
         allow_pickle: bool = False,
+        **extra,
     ) -> "Model":
+        extra.update({"cls": cls})
         try:
             obj = load_str_bytes(
                 b,
@@ -260,6 +262,7 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
                 encoding=encoding,
                 allow_pickle=allow_pickle,
                 json_loads=cls.__config__.json_loads,
+                **extra,
             )
         except (ValueError, TypeError, UnicodeDecodeError) as e:  # noqa: B014
             raise ValidationError([ErrorWrapper(e, loc=ROOT_KEY)], cls)
@@ -314,7 +317,7 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
         }
         params.update(dumps_kwargs)
 
-        xml_string = xml_dumps(self, **params)
+        xml_string = xml_dumps(self, **params)  # type: ignore
         if return_bytes is False:
             xml_string = xml_string.decode()
 
@@ -400,7 +403,7 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
         by_alias: bool = True,
         exclude_none: bool = True,
         exclude_comments: bool = False,
-    ) -> typing.OrderedDict[str, typing.Any]:
+    ) -> OrderedDict:
         return OrderedDict(
             self._fhir_iter(
                 by_alias=by_alias,
@@ -430,7 +433,8 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
                 exclude_none=exclude_none,
                 exclude_comments=exclude_comments,
             )
-            yield dict_key, v
+            if v is not None or (exclude_none is False and v is None):
+                yield dict_key, v
             # looking for comments or primitive extension for primitive data type
             if (
                 getattr(field.type_, "is_primitive", lambda: False)()
@@ -446,7 +450,7 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
                         exclude_none=exclude_none,
                         exclude_comments=exclude_comments,
                     )
-                    if len(ext_val) > 0:
+                    if ext_val is not None and len(ext_val) > 0:
                         yield dict_key_, ext_val
         # looking for comments
         comments = self.__dict__.get(FHIR_COMMENTS_FIELD_NAME, None)
@@ -467,10 +471,10 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
             )
             if "__root__" in v_dict:
                 return v_dict["__root__"]
-            return v_dict
+            value = v_dict
 
-        if isinstance(v, dict):
-            return {
+        elif isinstance(v, dict):
+            value = {
                 k_: cls._fhir_get_value(
                     v_,
                     by_alias=by_alias,
@@ -480,7 +484,7 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
                 for k_, v_ in v.items()
             }
         elif sequence_like(v):
-            return v.__class__(
+            value = v.__class__(
                 cls._fhir_get_value(
                     v_,
                     by_alias=by_alias,
@@ -491,10 +495,17 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
             )
 
         elif isinstance(v, Enum) and getattr(cls.Config, "use_enum_values", False):
-            return v.value
+            value = v.value
 
         else:
-            return v
+            value = v
+        if (
+            (sequence_like(value) or isinstance(value, dict))
+            and exclude_none is True
+            and len(value) == 0
+        ):
+            return None
+        return value
 
     class Config:
         json_loads = json_loads
