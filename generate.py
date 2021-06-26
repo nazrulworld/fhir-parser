@@ -99,7 +99,7 @@ def main(
             "SPECIFICATION_URL": settings.SPECIFICATION_URL,
             "RESOURCE_TARGET_DIRECTORY": settings.RESOURCE_TARGET_DIRECTORY,
             "UNITTEST_TARGET_DIRECTORY": settings.UNITTEST_TARGET_DIRECTORY,
-            "CURRENT_RELEASE_NAME": settings.CURRENT_RELEASE_NAME
+            "CURRENT_RELEASE_NAME": settings.CURRENT_RELEASE_NAME,
         }
         if getattr(settings, "FHIR_EXAMPLE_DIRECTORY", None):
             originals["FHIR_EXAMPLE_DIRECTORY"] = settings.FHIR_EXAMPLE_DIRECTORY
@@ -109,12 +109,19 @@ def main(
             fhirspec.FHIRClass.__known_classes__ = {}
             customs = {
                 "SPECIFICATION_URL": "/".join([settings.FHIR_BASE_URL, pv]),
-                "RESOURCE_TARGET_DIRECTORY": originals["RESOURCE_TARGET_DIRECTORY"] / pv,
-                "UNITTEST_TARGET_DIRECTORY": originals["UNITTEST_TARGET_DIRECTORY"].parent / pv / originals["UNITTEST_TARGET_DIRECTORY"].name,
-                "CURRENT_RELEASE_NAME": pv
+                "RESOURCE_TARGET_DIRECTORY": originals["RESOURCE_TARGET_DIRECTORY"]
+                / pv,
+                "UNITTEST_TARGET_DIRECTORY": originals[
+                    "UNITTEST_TARGET_DIRECTORY"
+                ].parent
+                / pv
+                / originals["UNITTEST_TARGET_DIRECTORY"].name,
+                "CURRENT_RELEASE_NAME": pv,
             }
             if "FHIR_EXAMPLE_DIRECTORY" in originals:
-                customs["FHIR_EXAMPLE_DIRECTORY"] = originals["FHIR_EXAMPLE_DIRECTORY"].parent / pv
+                customs["FHIR_EXAMPLE_DIRECTORY"] = (
+                    originals["FHIR_EXAMPLE_DIRECTORY"].parent / pv
+                )
             settings.update(customs)
             spec_source = load(
                 settings, force_download=force_download, cache_only=cache_only

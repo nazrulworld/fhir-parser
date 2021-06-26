@@ -35,7 +35,7 @@ CLASS_MAP = {
 # replacemap
 # Classes to be replaced with different ones at resource rendering time
 REPLACE_MAP = {
-#    "Reference": "FHIRReference"  # `FHIRReference` adds differencing capabilities
+    #    "Reference": "FHIRReference"  # `FHIRReference` adds differencing capabilities
 }
 # natives
 # Which class names are native to the language (or can be treated this way)
@@ -43,12 +43,7 @@ NATIVES = ["bool", "int", "float", "str", "dict"]
 
 # jsonmap
 # Which classes are to be expected from JSON decoding
-JSON_MAP = {
-    "str": "str",
-    "int": "int",
-    "bool": "bool",
-    "float": "float"
-}
+JSON_MAP = {"str": "str", "int": "int", "bool": "bool", "float": "float"}
 # jsonmap_default
 JSON_MAP_DEFAULT = "dict"
 
@@ -230,13 +225,13 @@ FHIR_PRIMITIVES = [
 # If the path is None, no file will be copied but the
 # class names will still be recognized and it is assumed the class is present.
 MANUAL_PROFILES = [
-    (
-        "templates/fhirresourcemodel.py",
-        "fhirresourcemodel",
-        ["FHIRResourceModel"],
-    ),
+    ("templates/fhirresourcemodel.py", "fhirresourcemodel", ["FHIRResourceModel"],),
     ("templates/fhirabstractmodel.py", "fhirabstractmodel", ["FHIRAbstractModel"]),
-    ("templates/fhirprimitiveextension.py", "fhirprimitiveextension", ["FHIRPrimitiveExtension"]),
+    (
+        "templates/fhirprimitiveextension.py",
+        "fhirprimitiveextension",
+        ["FHIRPrimitiveExtension"],
+    ),
     ("templates/fhirtypes.py", "fhirtypes", FHIR_PRIMITIVES),
 ]
 RESOURCES_WRITER_CLASS = "utils.ResourceWriter"
