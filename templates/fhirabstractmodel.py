@@ -17,7 +17,13 @@ from pydantic.fields import ModelField
 from pydantic.parse import Protocol
 from pydantic.utils import ROOT_KEY, sequence_like
 
-from fhir.resources.utils import load_file, load_str_bytes, xml_dumps, yaml_dumps
+from fhir.resources.utils import (
+    is_primitive_type,
+    load_file,
+    load_str_bytes,
+    xml_dumps,
+    yaml_dumps,
+)
 
 try:
     import orjson
@@ -317,7 +323,7 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
         }
         params.update(dumps_kwargs)
 
-        xml_string = xml_dumps(self, **params)  # type: ignore
+        xml_string = xml_dumps(self, **params)
         if return_bytes is False:
             xml_string = xml_string.decode()
 
@@ -403,7 +409,20 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
         by_alias: bool = True,
         exclude_none: bool = True,
         exclude_comments: bool = False,
+        **pydantic_extra,
     ) -> OrderedDict:
+        """important!
+        there is no impact on ``pydantic_extra`` we keep it as backward compatibility.
+        @see issues https://github.com/nazrulworld/fhir.resources/issues/90
+        & https://github.com/nazrulworld/fhir.resources/issues/89
+        """
+        if len(pydantic_extra) > 0:
+            logger.warning(
+                f"{self.__class__.__name__}.dict method accepts only"
+                "´by_alias´, ´exclude_none´, ´exclude_comments` as parameters"
+                " since version v6.2.0, any extra parameter is simply ignored. "
+                "You should not provide any extra argument."
+            )
         return OrderedDict(
             self._fhir_iter(
                 by_alias=by_alias,
@@ -422,24 +441,24 @@ class FHIRAbstractModel(BaseModel, abc.ABC):
         alias_maps = self.get_alias_mapping()
         for prop_name in self.elements_sequence():
             field_key = alias_maps[prop_name]
-            v = self.__dict__.get(field_key, None)
-            if v is None and exclude_none is True:
-                continue
+
             field = self.__fields__[field_key]
+            is_primitive = is_primitive_type(field)
+            v = self.__dict__.get(field_key, None)
             dict_key = by_alias and field.alias or field_key
-            v = self._fhir_get_value(
-                v,
-                by_alias=by_alias,
-                exclude_none=exclude_none,
-                exclude_comments=exclude_comments,
-            )
+            if v is not None:
+                v = self._fhir_get_value(
+                    v,
+                    by_alias=by_alias,
+                    exclude_none=exclude_none,
+                    exclude_comments=exclude_comments,
+                )
+
             if v is not None or (exclude_none is False and v is None):
                 yield dict_key, v
+
             # looking for comments or primitive extension for primitive data type
-            if (
-                getattr(field.type_, "is_primitive", lambda: False)()
-                or field.type_ is bool
-            ):
+            if is_primitive:
                 ext_key = f"{field_key}__ext"
                 ext_val = self.__dict__.get(ext_key, None)
                 if ext_val is not None:
