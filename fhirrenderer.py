@@ -116,6 +116,7 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
         """
         for filepath, module, contains in self.settings.MANUAL_PROFILES:
             if not filepath:
+                logger.info(f"Manual profile {filepath} doesn't exists.")
                 continue
 
             if filepath.exists():
