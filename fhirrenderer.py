@@ -60,8 +60,7 @@ def include_file(file_location):
 
 
 class FHIRRenderer(object):
-    """ Superclass for all renderer implementations.
-    """
+    """Superclass for all renderer implementations."""
 
     def __init__(self, spec, settings):
         self.spec = spec
@@ -73,12 +72,11 @@ class FHIRRenderer(object):
         self.jinjaenv.filters["unique_func_name"] = unique_func_name
 
     def render(self):
-        """ The main rendering start point, for subclasses to override.
-        """
+        """The main rendering start point, for subclasses to override."""
         raise Exception("Cannot use abstract superclass' `render` method")
 
     def do_render(self, data, template_name, target_path):
-        """ Render the given data using a Jinja2 template, writing to the file
+        """Render the given data using a Jinja2 template, writing to the file
         at the target path.
 
         :param template_name: The Jinja2 template to render, located in settings.TEMPLATE_DIRECTORY
@@ -108,12 +106,10 @@ class FHIRRenderer(object):
 
 
 class FHIRStructureDefinitionRenderer(FHIRRenderer):
-    """ Write classes for a profile/structure-definition.
-    """
+    """Write classes for a profile/structure-definition."""
 
     def copy_files(self, target_dir):
-        """ Copy base resources to the target location, according to settings.
-        """
+        """Copy base resources to the target location, according to settings."""
         for filepath, module, contains in self.settings.MANUAL_PROFILES:
             if not filepath:
                 logger.info(f"Manual profile {filepath} doesn't exists.")
@@ -200,9 +196,10 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                     # special variable
                     prop.need_primitive_ext = False
                     if (
-                        klass.name in ("Resource", "Element")
+                        klass.name in ("Resource",)
                         and self.settings.CURRENT_RELEASE_NAME == "R4"
                         and prop.class_name == "String"
+                        and prop.name == "id"
                     ):
                         # we force Resource.id type = Id
                         prop.class_name = "Id"
@@ -224,7 +221,7 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                     elif (
                         prop_klass.class_type == FHIR_CLASS_TYPES.primitive_type
                         or prop.is_native
-                    ):
+                    ) and prop.name != "id":
                         prop.need_primitive_ext = True
 
                     if prop_klass.class_type != FHIR_CLASS_TYPES.other:
@@ -316,7 +313,7 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
 
 
 class FHIRDependencyRenderer(FHIRRenderer):
-    """ Puts down dependencies for each of the FHIR resources. Per resource
+    """Puts down dependencies for each of the FHIR resources. Per resource
     class will grab all class/resource names that are needed for its
     properties and add them to the "imports" key. Will also check
     classes/resources may appear in references and list those in the
@@ -343,8 +340,7 @@ class FHIRDependencyRenderer(FHIRRenderer):
 
 
 class FHIRValueSetRenderer(FHIRRenderer):
-    """ Write ValueSet and CodeSystem contained in the FHIR spec.
-    """
+    """Write ValueSet and CodeSystem contained in the FHIR spec."""
 
     def render(self):
         if not self.settings.CODE_SYSTEMS_SOURCE_TEMPLATE:
@@ -364,8 +360,7 @@ class FHIRValueSetRenderer(FHIRRenderer):
 
 
 class FHIRUnitTestRenderer(FHIRRenderer):
-    """ Write unit tests.
-    """
+    """Write unit tests."""
 
     def render(self):
         if not self.spec.unit_tests:
