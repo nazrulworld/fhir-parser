@@ -370,7 +370,7 @@ class Url(AnyUrl, Primitive):
     Note URLs are accessed directly using the specified protocol.
     Common URL protocols are http{s}:, ftp:, mailto: and mllp:,
     though many others are defined"""
-
+    path_regex = re.compile(r'^/(?P<resourceType>[^\s?/]+)(/[^\s?/]+)*')
     __visit_name__ = "url"
 
     @classmethod
@@ -391,6 +391,13 @@ class Url(AnyUrl, Primitive):
             return value
         elif value in FHIR_PRIMITIVES:
             # Extensions may contain a valueUrl for a primitive FHIR type
+            return value
+
+        # we are allowing relative path
+        matched = cls.path_regex.match(value)
+        if matched is not None:
+            # @ToDo: required resource type validation?
+            # fx: resource type = matched.groupdict().get("resourceType")
             return value
 
         return AnyUrl.validate(value, field, config)
