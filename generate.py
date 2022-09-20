@@ -19,6 +19,7 @@ import pathlib
 
 from utils import ensure_init_py
 from utils import update_pytest_fixture
+from utils import FhirPathExpressionParserWriter
 
 _cache_path = "downloads"
 
@@ -52,6 +53,19 @@ _cache_path = "downloads"
     type=click.Choice(["STU3", "R4"], case_sensitive=True),
     required=False,
 )
+@click.option(
+    "--fhir-path-expression",
+    "-a",
+    is_flag=True,
+    default=False,
+    help="Generate FhirPath expression",
+)
+@click.option(
+    "--fhir-path-expression-output_dir",
+    "-o",
+    required=False,
+    help="FhirPath expression output directory",
+)
 def main(
     dry_run: bool,
     force_download: bool,
@@ -60,6 +74,8 @@ def main(
     build_previous_versions: bool,
     fhir_release: str = None,
     previous_versions: typing.Sequence[str] = None,
+    fhir_path_expression: bool = False,
+    fhir_path_expression_output_dir: str = None,
 ):
     """
     required_variables = [
@@ -71,6 +87,12 @@ def main(
 
         ]
     """
+    if fhir_path_expression:
+        if fhir_path_expression_output_dir is None:
+            raise RuntimeError("FHIR Path expression output path is required")
+        writer = FhirPathExpressionParserWriter(fhir_path_expression_output_dir)
+        return writer.write()
+
     settings = fhirspec.Configuration.from_module(config)
     updates = dict()
     if fhir_release is not None:

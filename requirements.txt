@@ -6,3 +6,4 @@ setuptools
 click
 fhirspec==0.3.0
 pydantic
+antlr4-tools
