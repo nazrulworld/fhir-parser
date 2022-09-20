@@ -176,8 +176,11 @@ class FhirPathExpressionParserWriter:
     output_dir: pathlib.Path = None
     grammar_path: pathlib.Path = None
     antlr4_executable: str = "antlr4"
+    antlr4_version: str = None
 
-    def __init__(self, output_dir=typing.Union[pathlib.Path, str]):
+    def __init__(
+        self, output_dir=typing.Union[pathlib.Path, str], antlr4_version: str = "4.9.3"
+    ):
         """ """
         if isinstance(output_dir, str):
             self.output_dir = parse_path(output_dir)
@@ -186,15 +189,18 @@ class FhirPathExpressionParserWriter:
         self.grammar_path = (
             pathlib.Path(os.path.abspath(__file__)).parent / "FHIRPathExpression.g4"
         )
+        self.antlr4_version = antlr4_version
 
     def write(self):
         """ """
         options = [
             str(self.antlr4_executable),
+            "-v",
+            self.antlr4_version,
             "-o",
             str(self.output_dir),
             "-Dlanguage=Python3",
-            str(self.grammar_path)
+            str(self.grammar_path),
         ]
         sys.stdout.write(f"Start executing command '{options}'\n")
         try:
