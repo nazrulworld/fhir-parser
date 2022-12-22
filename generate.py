@@ -28,7 +28,7 @@ _cache_path = "downloads"
 @click.option(
     "--fhir-release",
     "-r",
-    type=click.Choice(["STU3", "R4"], case_sensitive=True),
+    type=click.Choice(["STU3", "R4", "R4B"], case_sensitive=True),
     help="FHIR Release",
     default=None,
     required=False,

@@ -4,6 +4,6 @@ requests>=2.13.0
 colorlog==2.10.0
 setuptools
 click
-fhirspec==0.3.0
+fhirspec==0.4.0
 pydantic
 antlr4-tools
