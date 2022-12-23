@@ -369,7 +369,7 @@ class FHIRUnitTestRenderer(FHIRRenderer):
         for coll in self.spec.unit_tests:
             tests = coll.tests
             if (
-                self.settings.CURRENT_RELEASE_NAME == "R4"
+                self.settings.CURRENT_RELEASE_NAME in ("R4", "R4B")
                 and coll.klass.name == "Bundle"
             ):
                 tests = [
