@@ -1,6 +1,7 @@
 *.pyc
 __pycache__
 env
+.python-version
 
 # ignore mappings and settings files
 /mappings.py

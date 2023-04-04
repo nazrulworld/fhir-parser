@@ -1,4 +1,5 @@
 import os
+import os
 import pathlib
 
 """Variable Start Here """
@@ -74,9 +75,9 @@ ENUM_NAME_MAP = {
 FHIR_BASE_URL = "http://hl7.org/fhir"
 
 # CURRENT_VERSION
-CURRENT_RELEASE_NAME = "R4B"
+CURRENT_RELEASE_NAME = "R5"
 # PREVIOUS_VERSIONS
-PREVIOUS_RELEASES = {"STU3"}
+PREVIOUS_RELEASES = {"STU3", "R4B"}
 
 # specification_url
 SPECIFICATION_URL = "/".join([FHIR_BASE_URL, CURRENT_RELEASE_NAME])
