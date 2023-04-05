@@ -12,7 +12,7 @@ import pytest  # type: ignore
 
 EXAMPLE_RESOURCES_URL = (
     "https://github.com/nazrulworld/hl7-archives/raw/"
-    "0.3.2/FHIR/{{release}}/"
+    "0.4.0/FHIR/{{release}}/"
     "{{fhir_version}}-examples-json.zip"
 )
 ROOT_PATH = dirname(dirname(dirname(dirname(os.path.abspath(__file__)))))
