@@ -47,7 +47,11 @@ class FHIRPrimitiveExtension(fhirabstractmodel.FHIRAbstractModel):
         extension = values.get("extension", None)
         fhir_comments = values.get("fhir_comments", None)
 
-        if extension is None and fhir_comments is None:
+        if (
+            values.get("id", None) is None
+            and extension is None
+            and fhir_comments is None
+        ):
             errors.append(ErrorWrapper(MissingError(), loc="extension"))
             raise ValidationError(errors, cls)  # type: ignore
 

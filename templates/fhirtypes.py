@@ -38,6 +38,7 @@ FHIR_PRIMITIVES = [
     "id",
     "decimal",
     "integer",
+    "integer64",
     "unsignedInt",
     "positiveInt",
     "uri",
@@ -57,7 +58,7 @@ FHIR_PRIMITIVES = [
 class Primitive:
     """FHIR Primitive Data Type Base Class"""
 
-    __fhir_release__: str = "R4B"
+    __fhir_release__: str = "R5"
     __visit_name__: Optional[str] = None
     regex: Optional[Pattern[str]] = None
 
@@ -263,6 +264,14 @@ class Integer(ConstrainedInt, Primitive):
         return str(value)
 
 
+class Integer64(Integer):
+    """A signed integer in the range
+    -9,223,372,036,854,775,808 to +9,223,372,036,854,775,807 (64-bit).
+    This type is defined to allow for record/time counters that can get very large"""
+
+    __visit_name__ = "integer64"
+
+
 class UnsignedInt(ConstrainedInt, Primitive):
     """Any non-negative integer in the range 0..2,147,483,647"""
 
@@ -419,7 +428,8 @@ class Url(AnyUrl, Primitive):
 
 class Markdown(ConstrainedStr, Primitive):
     """A FHIR string (see above) that may contain markdown syntax for optional processing
-    by a markdown presentation engine, in the GFM extension of CommonMark format (see below)"""
+    by a markdown presentation engine, in the GFM extension of CommonMark format (see below)
+    """
 
     __visit_name__ = "markdown"
     regex = re.compile(r"\s*(\S|\s)*")
@@ -460,7 +470,6 @@ class Date(datetime.date, Primitive):
 
     @classmethod
     def __get_validators__(cls) -> "CallableGenerator":
-
         yield cls.validate
 
     @classmethod
@@ -515,7 +524,6 @@ class DateTime(datetime.datetime, Primitive):
 
     @classmethod
     def __get_validators__(cls) -> "CallableGenerator":
-
         yield cls.validate
 
     @classmethod
@@ -565,7 +573,8 @@ class Instant(datetime.datetime, Primitive):
     use date or dateTime (which can be as precise as instant,
     but is not required to be). instant is a more constrained dateTime
 
-    Note: This type is for system times, not human times (see date and dateTime below)."""
+    Note: This type is for system times, not human times (see date and dateTime below).
+    """
 
     regex = re.compile(
         r"([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|"
@@ -578,7 +587,6 @@ class Instant(datetime.datetime, Primitive):
 
     @classmethod
     def __get_validators__(cls) -> "CallableGenerator":
-
         yield cls.validate
 
     @classmethod
@@ -611,7 +619,6 @@ class Time(datetime.time, Primitive):
 
     @classmethod
     def __get_validators__(cls) -> "CallableGenerator":
-
         yield cls.validate
 
     @classmethod
