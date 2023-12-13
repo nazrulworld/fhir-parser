@@ -6,26 +6,26 @@ from email.utils import formataddr, parseaddr
 from typing import TYPE_CHECKING, Any, Dict, Optional, Pattern, Union
 from uuid import UUID
 
-from pydantic import AnyUrl
-from pydantic.errors import ConfigError, DateError, DateTimeError, TimeError
-from pydantic.main import load_str_bytes
-from pydantic.networks import validate_email
-from pydantic.types import (
+from pydantic.v1 import AnyUrl
+from pydantic.v1.errors import ConfigError, DateError, DateTimeError, TimeError
+from pydantic.v1.main import load_str_bytes
+from pydantic.v1.networks import validate_email
+from pydantic.v1.types import (
     ConstrainedBytes,
     ConstrainedDecimal,
     ConstrainedInt,
     ConstrainedStr,
 )
-from pydantic.validators import bool_validator, parse_date, parse_datetime, parse_time
+from pydantic.v1.validators import bool_validator, parse_date, parse_datetime, parse_time
 
 from fhir.resources.core.fhirabstractmodel import FHIRAbstractModel
 
 from .fhirtypesvalidators import run_validator_for_fhir_type
 
 if TYPE_CHECKING:
-    from pydantic.types import CallableGenerator
-    from pydantic.fields import ModelField
-    from pydantic import BaseConfig
+    from pydantic.v1.types import CallableGenerator
+    from pydantic.v1.fields import ModelField
+    from pydantic.v1 import BaseConfig
 
 __author__ = "Md Nazrul Islam<email2nazrul@gmail.com>"
 
@@ -106,7 +106,7 @@ class String(ConstrainedStr, Primitive):
     Leading and Trailing whitespace is allowed, but SHOULD be removed when using
     the XML format. Note: This means that a string that consists only of whitespace
     could be trimmed to nothing, which would be treated as an invalid element value.
-    Therefore strings SHOULD always contain non-whitespace content"""
+    Therefore, strings SHOULD always contain non-whitespace content"""
 
     regex = re.compile(r"[ \r\n\t\S]+")
     allow_empty_str = False
@@ -119,7 +119,7 @@ class String(ConstrainedStr, Primitive):
         2. https://github.com/nazrulworld/fhir.resources/issues/65#issuecomment-856693256
         There are a lot of valid discussion about accept empty string as String value but
         it is cleared for us that according to FHIR Specification, empty string is not valid!
-        However in real use cases, we see empty string is coming other (when the task is related
+        However, in real use cases, we see empty string is coming other (when the task is related
         to query data from other system)
 
         It is in your hand now, if you would like to allow empty string! by default empty string is not

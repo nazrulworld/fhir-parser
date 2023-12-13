@@ -14,13 +14,13 @@ Last updated: {{ profile.fhir_last_updated }}
 {%- if need_typing %}
 import typing
 {%- endif %}
-from pydantic import Field
+from pydantic.v1 import Field
 {%- if need_root_validator %}
-from pydantic import root_validator
+from pydantic.v1 import root_validator
 {% endif %}
 {%- if has_required_primitive_element %}
-from pydantic.error_wrappers import ErrorWrapper, ValidationError
-from pydantic.errors import MissingError, NoneIsNotAllowedError
+from pydantic.v1.error_wrappers import ErrorWrapper, ValidationError
+from pydantic.v1.errors import MissingError, NoneIsNotAllowedError
 {% endif %}
 {%- if need_fhirtypes %}
 from . import fhirtypes

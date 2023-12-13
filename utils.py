@@ -1,13 +1,13 @@
 import configparser
-import logging
-import pathlib
-import typing
-from fhirspec import FHIRSpecWriter
-import fhirrenderer
 import os
+import pathlib
 import sys
+import typing
 from subprocess import check_call, CalledProcessError
 
+from fhirspec import FHIRSpecWriter
+
+import fhirrenderer
 
 __author__ = "Md Nazrul Islam <email2nazrul@gmail.com>"
 

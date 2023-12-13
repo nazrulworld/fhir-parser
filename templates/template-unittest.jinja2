@@ -11,7 +11,7 @@ Revision: {{ info.revision }}
 {%- endif %}
 Last updated: {{ profile.fhir_last_updated }}
 """
-from pydantic.validators import bytes_validator  # noqa: F401
+from pydantic.v1.validators import bytes_validator  # noqa: F401
 from .. import fhirtypes  # noqa: F401
 from .. import {{ class.module }}
 

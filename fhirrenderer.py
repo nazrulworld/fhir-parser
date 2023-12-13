@@ -2,20 +2,18 @@
 # -*- coding: utf-8 -*-
 
 import io
-import os
-import re
-import shutil
 import json
-from fhirspec import FHIR_CLASS_TYPES
-from fhirspec import FHIRClass
-
-from jinja2 import Environment, PackageLoader, TemplateNotFound
+import os
+import shutil
 from textwrap import TextWrapper
+
+from fhirspec import FHIRClass
+from fhirspec import FHIR_CLASS_TYPES
+from jinja2 import Environment, PackageLoader, TemplateNotFound
 from jinja2.filters import contextfilter
 from markupsafe import Markup
 
 from logger import logger
-import io
 
 
 @contextfilter
