@@ -1,35 +1,39 @@
 {% include "fhirtypes.py" with context %}
+
+
+FHIRPrimitiveExtensionType = create_fhir_type(
+    "FHIRPrimitiveExtensionType", "{{ root_module_path }}.fhirprimitiveextension.FHIRPrimitiveExtension"
+)
+
 {%- for klass in classes %}
-{% if klass.name not in ("Element", "Resource") %}
-class {{ klass.name }}Type(AbstractType):
-    __resource_type__ = "{{ klass.name }}"
-{% endif -%}{% endfor %}
+{{ klass.name }}Type = create_fhir_type(
+    "{{ klass.name }}Type", "{{ root_module_path }}.{{ klass.module }}.{{ klass.name }}"
+)
+{% endfor %}
 __all__ = [
-    "Boolean",
-    "String",
-    "Base64Binary",
-    "Code",
-    "Id",
-    "Decimal",
-    "Integer",
-    "UnsignedInt",
-    "PositiveInt",
-    "Uri",
-    "Oid",
-    "Uuid",
-    "Canonical",
-    "Url",
-    "Markdown",
-    "Xhtml",
-    "Date",
-    "DateTime",
-    "Instant",
-    "Time",
+    "BooleanType",
+    "StringType",
+    "Base64BinaryType",
+    "CodeType",
+    "IdType",
+    "IntegerType",
+    "Integer64Type",
+    "DecimalType",
+    "UnsignedIntType",
+    "PositiveIntType",
+    "CanonicalType",
+    "UriType",
+    "OidType",
+    "UuidType",
+    "UrlType",
+    "MarkdownType",
+    "XhtmlType",
+    "DateType",
+    "DateTimeType",
+    "InstantType",
+    "TimeType",
     "FHIRPrimitiveExtensionType",
-    "ElementType",
-    "ResourceType",
     {%- for klass in classes %}
-	{% if klass.name not in ("Element", "Resource") %}
 	"{{ klass.name }}Type",
-	{% endif -%}{% endfor %}
+	{% endfor %}
 ]

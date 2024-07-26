@@ -1,3 +1,4 @@
+import decimal
 import hashlib
 import io
 import os
@@ -5,10 +6,13 @@ import pathlib
 import shutil
 import sys
 import tempfile
+import typing
 import zipfile
 from os.path import dirname
 
 import pytest  # type: ignore
+from fhir_core.types import DateTimeType, DateType, InstantType, TimeType
+from pydantic import BaseModel, Field
 
 EXAMPLE_RESOURCES_URL = (
     "https://github.com/nazrulworld/hl7-archives/raw/"
@@ -40,8 +44,7 @@ def download_and_store(url, path):
 
 
 def expand(self, local):
-    """ Expand the ZIP file at the given path to the cache directory.
-    """
+    """Expand the ZIP file at the given path to the cache directory."""
     path = os.path.join(self.cache, local)
     assert os.path.exists(path)
     import zipfile  # import here as we can bypass its use with a manual unzip
@@ -52,7 +55,6 @@ def expand(self, local):
 
 @pytest.fixture(scope="session")
 def base_settings():
-
     if not os.path.exists(CACHE_PATH):
         os.makedirs(CACHE_PATH)
 
@@ -86,3 +88,25 @@ def base_settings():
 
     os.environ.pop("FHIR_UNITTEST_DATADIR")
     shutil.rmtree(temp_data_dir)
+
+
+def bytes_validator(v: typing.Any) -> typing.Union[bytes]:
+    if isinstance(v, bytes):
+        return v
+    elif isinstance(v, bytearray):
+        return bytes(v)
+    elif isinstance(v, str):
+        return v.encode()
+    elif isinstance(v, (float, int, decimal.Decimal)):
+        return str(v).encode()
+    else:
+        raise ValueError
+
+
+class DateTimeValidatorModel(BaseModel):
+    """This model is used to validate datetime objects against in the tests"""
+
+    valueDate: DateType = Field(None, title="Date")
+    valueTime: TimeType = Field(None, title="Time")
+    valueDateTime: DateTimeType = Field(None, title="DateTime")
+    valueInstant: InstantType = Field(None, title="Instant")

@@ -11,8 +11,9 @@ Revision: {{ info.revision }}
 {%- endif %}
 Last updated: {{ profile.fhir_last_updated }}
 """
-from pydantic.v1.validators import bytes_validator  # noqa: F401
-from .. import fhirtypes  # noqa: F401
+from pathlib import Path
+
+from .fixtures import bytes_validator, DateTimeValidatorModel  # noqa: F401
 from .. import {{ class.module }}
 
 {%- for tcase in tests %}
@@ -35,7 +36,7 @@ def impl_{{ class.name | lower }}_{{ loop.index }}(inst):
     assert inst.{{ onetest.path }} is False
     {%- endif %}
 {%- else %}{% if onetest.klass.name in ("DateTime", "Instant", "Date", "Time") %}
-    assert inst.{{ onetest.path }} == {{ onetest.klass.module }}.{{ onetest.klass.name }}.validate("{{ onetest.value }}")
+    assert inst.{{ onetest.path }} == DateTimeValidatorModel(value{{ onetest.klass.name }}="{{ onetest.value }}").value{{ onetest.klass.name }}
 {%- else %}
     # Don't know how to create unit test
     # for "{{ onetest.path }}",
@@ -51,15 +52,13 @@ def test_{{ class.name | lower}}_{{ loop.index }}(base_settings):
     filename = (
         base_settings["unittest_data_dir"] / "{{ tcase.filename }}"
     )
-    inst = {{ class.module }}.{{ class.name }}.parse_file(
-        filename, content_type="application/json", encoding="utf-8"
-    )
-    assert "{{ class.name }}" == inst.resource_type
+    inst = {{ class.module }}.{{ class.name }}.model_validate_json(Path(filename).read_bytes())
+    assert "{{ class.name }}" == inst.get_resource_type()
 
     impl_{{ class.name | lower }}_{{ loop.index }}(inst)
 
     # testing reverse by generating data from itself and create again.
-    data = inst.dict()
+    data = inst.model_dump()
     assert "{{ class.name }}" == data["resourceType"]
 
     inst2 = {{ class.module }}.{{ class.name }}(**data)

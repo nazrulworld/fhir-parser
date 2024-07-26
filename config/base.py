@@ -1,10 +1,10 @@
 import os
-import os
 import pathlib
 
 """Variable Start Here """
 BASE_PATH = pathlib.Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 CACHE_PATH = "downloads"
+DEFAULT_FHIR_RELEASE = "R5"
 # classmap
 CLASS_MAP = {
     "Any": "Resource",

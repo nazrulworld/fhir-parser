@@ -7,3 +7,4 @@ click
 fhirspec==0.4.0
 pydantic
 antlr4-tools
+fhir-core

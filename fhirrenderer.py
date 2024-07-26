@@ -69,6 +69,13 @@ class FHIRRenderer(object):
         self.jinjaenv.filters["string_wrap"] = string_wrap
         self.jinjaenv.filters["unique_func_name"] = unique_func_name
 
+    def get_root_module_path(self) -> str:
+        """ """
+        module_path = "fhir.resources"
+        if self.settings.CURRENT_RELEASE_NAME != self.settings.DEFAULT_FHIR_RELEASE:
+            module_path += "." + self.settings.CURRENT_RELEASE_NAME
+        return module_path
+
     def render(self):
         """The main rendering start point, for subclasses to override."""
         raise Exception("Cannot use abstract superclass' `render` method")
@@ -95,6 +102,9 @@ class FHIRRenderer(object):
         dirpath = target_path.parent
         if not dirpath.exists():
             dirpath.mkdir(parents=True)
+
+        # added global variables
+        data.update({"root_module_path": self.get_root_module_path()})
 
         with io.open(target_path, "w", encoding="utf-8") as handle:
             logger.info("Writing {}".format(target_path))
@@ -268,6 +278,11 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                             (prop.orig_name, prop.orig_name + "__ext")
                         )
 
+                    # Fix Primitives Types
+                    if prop_klass.class_type == FHIR_CLASS_TYPES.primitive_type:
+                        if not prop.field_type.endswith("Type"):
+                            prop.field_type += "Type"
+
             if has_one_of_many or has_required_primitive_element:
                 need_root_validator = True
 
@@ -306,7 +321,7 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
             self.do_render(data, source_path, target_path)
 
         self.copy_files(target_path.parent)
-        self.render_validators()
+        # self.render_validators()
         self.render_fhir_types()
 
 
