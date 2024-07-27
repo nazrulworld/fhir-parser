@@ -22,7 +22,7 @@ from . import fhirtypes
 {%- for klass in classes %}
 
 {% if klass.superclass in imports and klass.superclass.module not in imported -%}
-{% if klass.superclass.module == 'fhirabstractmodel' %}from fhir.resources.core import {{ klass.superclass.module }}{% else %}from . import {{ klass.superclass.module }}{% endif %}
+{% if klass.superclass.module == 'fhirabstractmodel' %}from fhir_core import {{ klass.superclass.module }}{% else %}from . import {{ klass.superclass.module }}{% endif %}
 {% set _ = imported.update({klass.superclass.module: True}) %}
 {% endif -%}
 
