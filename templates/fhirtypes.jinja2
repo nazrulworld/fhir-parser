@@ -5,14 +5,19 @@ FHIRPrimitiveExtensionType = create_fhir_type(
     "FHIRPrimitiveExtensionType", "{{ root_module_path }}.fhirprimitiveextension.FHIRPrimitiveExtension"
 )
 
-{%- for klass in classes %}
-    {% if klass.name not in ("Element", "Resource") %}
-	"{{ klass.name }}Type",
-	{% endif -%}
+ElementType = create_fhir_element_or_resource_type(
+    "ElementType", "{{ root_module_path }}.element.Element"
+)
+
+ResourceType = create_fhir_element_or_resource_type(
+    "ResourceType", "{{ root_module_path }}.resource.Resource"
+)
+
+{%- for klass in classes %}{% if klass.name not in ("Element", "Resource") %}
 {{ klass.name }}Type = create_fhir_type(
     "{{ klass.name }}Type", "{{ root_module_path }}.{{ klass.module }}.{{ klass.name }}"
 )
-{% endfor %}
+{% endif -%}{% endfor %}
 __all__ = [
     "BooleanType",
     "StringType",
