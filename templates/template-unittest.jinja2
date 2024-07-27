@@ -13,7 +13,7 @@ Last updated: {{ profile.fhir_last_updated }}
 """
 from pathlib import Path
 
-from .fixtures import bytes_validator, DateTimeValidatorModel  # noqa: F401
+from .fixtures import bytes_validator, ExternalValidatorModel  # noqa: F401
 from .. import {{ class.module }}
 
 {%- for tcase in tests %}
@@ -21,7 +21,7 @@ from .. import {{ class.module }}
 
 def impl_{{ class.name | lower }}_{{ loop.index }}(inst):
 {%- for onetest in tcase.tests %}
-{%- if onetest.klass.name in ("String", "Code", "Id", "Uri", "Oid", "Xhtml", "Uuid", "Canonical", "Url", "Markdown") %}
+{%- if onetest.klass.name in ("String", "Code", "Id", "Oid", "Xhtml", "Uuid", "Canonical", "Markdown") %}
     assert inst.{{ onetest.path }} == {{ custom_mac.pep8_string_wrap(onetest.value | replace('"', '\\"') | replace('\\n', '\\\\n'), width=60, to_json=False).rstrip()}}
 {%- else %}{% if onetest.klass.name == "Base64Binary" %}
     assert inst.{{ onetest.path }} == bytes_validator({{ custom_mac.pep8_string_wrap(onetest.value, width=60, to_json=False).rstrip() }})
@@ -35,8 +35,8 @@ def impl_{{ class.name | lower }}_{{ loop.index }}(inst):
     {%- else %}
     assert inst.{{ onetest.path }} is False
     {%- endif %}
-{%- else %}{% if onetest.klass.name in ("DateTime", "Instant", "Date", "Time") %}
-    assert inst.{{ onetest.path }} == DateTimeValidatorModel(value{{ onetest.klass.name }}="{{ onetest.value }}").value{{ onetest.klass.name }}
+{%- else %}{% if onetest.klass.name in ("DateTime", "Instant", "Date", "Time", "Uri", "Url") %}
+    assert inst.{{ onetest.path }} == ExternalValidatorModel(value{{ onetest.klass.name }}="{{ onetest.value }}").value{{ onetest.klass.name }}
 {%- else %}
     # Don't know how to create unit test
     # for "{{ onetest.path }}",

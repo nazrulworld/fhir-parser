@@ -6,6 +6,9 @@ FHIRPrimitiveExtensionType = create_fhir_type(
 )
 
 {%- for klass in classes %}
+    {% if klass.name not in ("Element", "Resource") %}
+	"{{ klass.name }}Type",
+	{% endif -%}
 {{ klass.name }}Type = create_fhir_type(
     "{{ klass.name }}Type", "{{ root_module_path }}.{{ klass.module }}.{{ klass.name }}"
 )

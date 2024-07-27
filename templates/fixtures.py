@@ -11,7 +11,14 @@ import zipfile
 from os.path import dirname
 
 import pytest  # type: ignore
-from fhir_core.types import DateTimeType, DateType, InstantType, TimeType
+from fhir_core.types import (
+    DateTimeType,
+    DateType,
+    InstantType,
+    TimeType,
+    UriType,
+    UrlType,
+)
 from pydantic import BaseModel, Field
 
 EXAMPLE_RESOURCES_URL = (
@@ -103,10 +110,12 @@ def bytes_validator(v: typing.Any) -> typing.Union[bytes]:
         raise ValueError
 
 
-class DateTimeValidatorModel(BaseModel):
+class ExternalValidatorModel(BaseModel):
     """This model is used to validate datetime objects against in the tests"""
 
     valueDate: DateType = Field(None, title="Date")
     valueTime: TimeType = Field(None, title="Time")
     valueDateTime: DateTimeType = Field(None, title="DateTime")
     valueInstant: InstantType = Field(None, title="Instant")
+    valueUri: UriType = Field(None, title="Uri")
+    valueUrl: UrlType = Field(None, title="Url")

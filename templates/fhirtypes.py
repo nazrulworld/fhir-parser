@@ -23,6 +23,7 @@ from fhir_core.types import (
     UuidType,
     XhtmlType,
     create_fhir_type,
+    create_fhir_element_or_resource_type
 )
 
 __author__ = "Md Nazrul Islam"
