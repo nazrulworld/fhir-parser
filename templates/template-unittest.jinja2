@@ -11,8 +11,6 @@ Revision: {{ info.revision }}
 {%- endif %}
 Last updated: {{ profile.fhir_last_updated }}
 """
-from pathlib import Path
-
 from .fixtures import bytes_validator, ExternalValidatorModel  # noqa: F401
 from .. import {{ class.module }}
 
@@ -24,7 +22,7 @@ def impl_{{ class.name | lower }}_{{ loop.index }}(inst):
 {%- if onetest.klass.name in ("String", "Code", "Id", "Oid", "Xhtml", "Uuid", "Canonical", "Markdown") %}
     assert inst.{{ onetest.path }} == {{ custom_mac.pep8_string_wrap(onetest.value | replace('"', '\\"') | replace('\\n', '\\\\n'), width=60, to_json=False).rstrip()}}
 {%- else %}{% if onetest.klass.name == "Base64Binary" %}
-    assert inst.{{ onetest.path }} == bytes_validator({{ custom_mac.pep8_string_wrap(onetest.value, width=60, to_json=False).rstrip() }})
+    assert inst.{{ onetest.path }} == ExternalValidatorModel(value{{ onetest.klass.name }}={{ custom_mac.pep8_string_wrap(onetest.value, width=60, to_json=False).rstrip() }}).value{{ onetest.klass.name }}
 {%- else %}{% if onetest.klass.name in ("Integer", "UnsignedInt", "PositiveInt") %}
     assert inst.{{ onetest.path }} == {{ onetest.value }}
 {%- else %}{% if onetest.klass.name in ("Decimal", "NSDecimalNumber") %}
@@ -52,7 +50,7 @@ def test_{{ class.name | lower}}_{{ loop.index }}(base_settings):
     filename = (
         base_settings["unittest_data_dir"] / "{{ tcase.filename }}"
     )
-    inst = {{ class.module }}.{{ class.name }}.model_validate_json(Path(filename).read_bytes())
+    inst = {{ class.module }}.{{ class.name }}.model_validate_json(filename.read_bytes())
     assert "{{ class.name }}" == inst.get_resource_type()
 
     impl_{{ class.name | lower }}_{{ loop.index }}(inst)
