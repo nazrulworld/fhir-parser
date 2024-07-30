@@ -20,12 +20,13 @@ from . import fhirtypes
 {% endif %}
 {%- set imported = {} %}
 {%- for klass in classes %}
-
 {% if klass.superclass in imports and klass.superclass.module not in imported -%}
 {% if klass.superclass.module == 'fhirabstractmodel' %}from fhir_core import {{ klass.superclass.module }}{% else %}from . import {{ klass.superclass.module }}{% endif %}
 {% set _ = imported.update({klass.superclass.module: True}) %}
 {% endif -%}
+{% endfor -%}
 
+{%- for klass in classes %}
 class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.module }}.{% endif -%}
     {{ klass.superclass.name|default('object')}}):
     """Disclaimer: Any field name ends with ``__ext`` doesn't part of
@@ -47,7 +48,7 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
 	{%- set type_klass %}
 		{%- if prop.is_array %}typing.List[{% if prop.need_primitive_ext  %}typing.Optional[{{ type_klass_ }}]{% else %}{{ type_klass_ }}{% endif %}]{% else %}{{ type_klass_ }}{% endif -%}
 	{% endset %}
-    {{ prop.name }}: {{ type_klass }} = Field(
+    {{ prop.name }}: {{ type_klass }} = Field(  # type: ignore
 		{% if prop.nonoptional and not prop.one_of_many and not prop.need_primitive_ext %}...{% else %}None{% endif %},
 		alias="{{ prop.orig_name }}",
 		title={% if prop.short%}{{ custom_mac.pep8_string_wrap(prop.short, width=70).rstrip()}}{% else %}None{% endif %},
@@ -74,7 +75,7 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
         }
 	)
     {%- if prop.need_primitive_ext and klass.name != "Extension" %}
-    {{ prop.orig_name }}__ext: {% if prop.is_array %}typing.List[typing.Union[fhirtypes.FHIRPrimitiveExtensionType, None]]{% else %}fhirtypes.FHIRPrimitiveExtensionType{% endif %} = Field(
+    {{ prop.orig_name }}__ext: {% if prop.is_array %}typing.List[typing.Union[fhirtypes.FHIRPrimitiveExtensionType, None]]{% else %}fhirtypes.FHIRPrimitiveExtensionType{% endif %} = Field(  # type: ignore
         None,
         alias="_{{ prop.orig_name }}",
         title="Extension field for ``{{ prop.name }}``."
