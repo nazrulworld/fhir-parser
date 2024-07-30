@@ -39,7 +39,6 @@ class FHIRPrimitiveExtension(fhirabstractmodel.FHIRAbstractModel):
         cls, values: typing.Dict[str, typing.Any]
     ) -> typing.Dict[str, typing.Any]:
         """Conditional Required Validation"""
-        errors = list()
         extension = values.get("extension", None)
         fhir_comments = values.get("fhir_comments", None)
 

@@ -14,7 +14,9 @@ Last updated: {{ profile.fhir_last_updated }}
 {%- if need_typing %}
 import typing
 {%- endif %}
+{%- if need_pydantic_field %}
 from pydantic import Field
+{% endif -%}
 {%- if need_fhirtypes %}
 from . import fhirtypes
 {% endif %}

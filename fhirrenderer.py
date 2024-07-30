@@ -197,10 +197,13 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
             need_union_type = False
             need_typing = False
             need_root_validator = False
+            need_pydantic_field = False
             one_of_many_fields = dict()
             required_primitive_element_fields = dict()
             for klass in classes:
                 for prop in klass.properties:
+                    if need_pydantic_field is False:
+                        need_pydantic_field = True
                     # special variable
                     prop.need_primitive_ext = False
                     if (
@@ -305,6 +308,7 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                 "one_of_many_fields": one_of_many_fields,
                 "has_one_of_many": has_one_of_many,
                 "need_union_type": need_union_type,
+                "need_pydantic_field": need_pydantic_field,
                 "need_typing": need_typing,
                 "need_root_validator": need_root_validator,
                 "required_primitive_element_fields": required_primitive_element_fields,
