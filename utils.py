@@ -41,7 +41,7 @@ def get_fhir_model_class(model_name: str) -> type[FHIRAbstractModel]:
         return model_type.get_model_klass()
 
     except AttributeError:
-        raise ValueError(f"{model_name} is not a valid FHIR Model")
+        raise ValueError(model_name + " is not a valid FHIR Model")
 
 """
 )
