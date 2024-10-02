@@ -13,23 +13,54 @@ __author__ = "Md Nazrul Islam <email2nazrul@gmail.com>"
 
 INIT_TPL = (
     """
+from __future__ import annotations as _annotations
+
+from functools import lru_cache
+from typing import TYPE_CHECKING, cast
+
+from fhir_core.fhirabstractmodel import FHIRAbstractModel
+
+__author__ = "Md Nazrul Islam"
+__email__ = "email2nazrul@gmail.com"
+__fhir_version__ = "{0}"
+
+
+@lru_cache(maxsize=None, typed=True)
+def get_fhir_model_class(model_name: str) -> type[FHIRAbstractModel]:
+    """
+    """
+    from . import fhirtypes as ft
+
+    try:
+        model_type = getattr(ft, model_name + "Type")
+        if TYPE_CHECKING:
+            from fhir_core.types import FhirBase
+
+            model_type = cast(type[FhirBase], model_type)
+
+        return model_type.get_model_klass()
+
+    except AttributeError:
+        raise ValueError(f"{model_name} is not a valid FHIR Model")
+
+"""
+)
+TEST_INIT_TPL = """
 __author__ = "Md Nazrul Islam"
 __email__ = "email2nazrul@gmail.com"
 __fhir_version__ = "{0}"
 
 """
-)
 
 
 def ensure_init_py(settings, version_info):
     """ """
     init_tpl = INIT_TPL.format(version_info.version, "element_type")
-
-    for file_location in [
-        settings.RESOURCE_TARGET_DIRECTORY,
-        settings.UNITTEST_TARGET_DIRECTORY,
+    test_init_tpl = TEST_INIT_TPL.format(version_info.version, "element_type")
+    for file_location, tpl in [
+        (settings.RESOURCE_TARGET_DIRECTORY, init_tpl),
+        (settings.UNITTEST_TARGET_DIRECTORY, test_init_tpl),
     ]:
-
         if (file_location / "__init__.py").exists():
             lines = list()
             has_fhir_version = False
@@ -49,7 +80,7 @@ def ensure_init_py(settings, version_info):
 
             txt = "\n".join(lines)
         else:
-            txt = init_tpl
+            txt = tpl
 
         with open((file_location / "__init__.py"), "w") as fp:
             fp.write(txt)
