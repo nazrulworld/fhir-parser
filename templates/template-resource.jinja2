@@ -1,5 +1,5 @@
 {% import 'macros.jinja2' as custom_mac -%}
-# -*- coding: utf-8 -*-
+from __future__ import annotations as _annotations
 """
 Profile: {{ profile.url }}
 Release: {{ release_name }}
@@ -48,9 +48,9 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
 		{%- if prop.field_type_module %}{{ prop.field_type_module }}.{{ prop.field_type }}{% else %}{{ prop.field_type }}{% endif -%}
 	{%endset -%}
 	{%- set type_klass %}
-		{%- if prop.is_array %}typing.List[{% if prop.need_primitive_ext  %}typing.Optional[{{ type_klass_ }}]{% else %}{{ type_klass_ }}{% endif %}]{% else %}{{ type_klass_ }}{% endif -%}
+		{%- if prop.is_array %}typing.List[{% if prop.need_primitive_ext  %}{{ type_klass_ }} | None{% else %}{{ type_klass_ }}{% endif %}]{% else %}{{ type_klass_ }}{% endif -%}
 	{% endset %}
-    {{ prop.name }}: {{ type_klass }} = Field(  # type: ignore
+    {{ prop.name }}: {{ type_klass }}{% if not (prop.nonoptional and not prop.one_of_many and not prop.need_primitive_ext) %} | None{% endif %} = Field(  # type: ignore
 		{% if prop.nonoptional and not prop.one_of_many and not prop.need_primitive_ext %}...{% else %}None{% endif %},
 		alias="{{ prop.orig_name }}",
 		title={% if prop.short%}{{ custom_mac.pep8_string_wrap(prop.short, width=70).rstrip()}}{% else %}None{% endif %},
@@ -77,7 +77,7 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
         }
 	)
     {%- if prop.need_primitive_ext and klass.name != "Extension" %}
-    {{ prop.orig_name }}__ext: {% if prop.is_array %}typing.List[typing.Union[fhirtypes.FHIRPrimitiveExtensionType, None]]{% else %}fhirtypes.FHIRPrimitiveExtensionType{% endif %} = Field(  # type: ignore
+    {{ prop.orig_name }}__ext: {% if prop.is_array %}typing.List[fhirtypes.FHIRPrimitiveExtensionType | None] | None{% else %}fhirtypes.FHIRPrimitiveExtensionType | None{% endif %} = Field(  # type: ignore
         None,
         alias="_{{ prop.orig_name }}",
         title="Extension field for ``{{ prop.name }}``."

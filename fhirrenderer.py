@@ -290,8 +290,7 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                 need_root_validator = True
 
             if (
-                need_union_type
-                or has_one_of_many
+                has_one_of_many
                 or has_required_primitive_element
                 or has_array_type
             ):
