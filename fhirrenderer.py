@@ -217,6 +217,16 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                         prop.field_type = "Id"
                         prop.type_name = "id"
 
+                    # Issue https://github.com/nazrulworld/fhir.resources/pull/160
+                    if (
+                        klass.name in ("Element",)
+                        and self.settings.CURRENT_RELEASE_NAME == "R4B"
+                        and prop.class_name == "Id"
+                        and prop.name == "id"
+                    ):
+                        prop.class_name = "String"
+                        prop.field_type = "String"
+
                     if not prop.is_native and need_fhirtypes is False:
                         need_fhirtypes = True
                     if prop.is_array and has_array_type is False:
