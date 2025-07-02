@@ -57,6 +57,9 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
 		description={% if prop.formal%}{{ custom_mac.pep8_string_wrap(prop.formal, width=70).rstrip()}}{% else %}None{% endif %},
         json_schema_extra={
         "element_property": True,
+        {%- if prop.is_summary %}
+        "is_summery_element": True,
+        {%- endif %}
         {%- if prop.nonoptional and not prop.one_of_many and prop.need_primitive_ext %}
         "element_required": True,
         {%- endif %}
@@ -92,6 +95,13 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
         with preserving original sequence order.
         """
         return {{ klass.expanded_properties_sequence|tojson }}
+
+    @classmethod
+    def summary_elements_sequence(cls):
+        """returning all element names (those have summary mode are enabled) from ``{{ klass.name }}`` according to specification,
+        with preserving the original sequence order.
+        """
+        return {{ klass.expanded_summary_properties_sequence|tojson }}
 
 {% if klass.name in required_primitive_element_fields %}
     def get_required_fields(self) -> typing.List[typing.Tuple[str, str]]:
