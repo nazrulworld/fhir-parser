@@ -58,7 +58,7 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
         json_schema_extra={
         "element_property": True,
         {%- if prop.is_summary %}
-        "is_summery_element": True,
+        "summary_element_property": True,
         {%- endif %}
         {%- if prop.nonoptional and not prop.one_of_many and prop.need_primitive_ext %}
         "element_required": True,
@@ -90,8 +90,8 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
 {%- endfor %}
     @classmethod
     def elements_sequence(cls):
-        """returning all elements names from
-        ``{{ klass.name }}`` according specification,
+        """returning all element names from
+        ``{{ klass.name }}`` according to specification,
         with preserving original sequence order.
         """
         return {{ klass.expanded_properties_sequence|tojson }}
