@@ -92,7 +92,7 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
     def elements_sequence(cls):
         """returning all element names from
         ``{{ klass.name }}`` according to specification,
-        with preserving original sequence order.
+        with preserving the original sequence order.
         """
         return {{ klass.expanded_properties_sequence|tojson }}
 
