@@ -1,0 +1,17 @@
+annotated-types==0.7.0
+antlr4-tools==0.2.1
+certifi==2024.8.30
+charset-normalizer==3.4.0
+click==8.1.7
+colorlog==2.10.0
+fhir_core==1.1.1
+fhirspec @ git+https://github.com/nazrulworld/fhirspec.git@e739422c95fb559dbd54e33d6e7e90893d2bf651
+idna==3.10
+install-jdk==1.1.0
+Jinja2==3.1.6
+MarkupSafe==2.1.5
+pydantic==2.9.2
+pydantic_core==2.23.4
+requests==2.32.3
+typing_extensions==4.12.2
+urllib3==2.2.3

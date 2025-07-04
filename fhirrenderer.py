@@ -10,13 +10,13 @@ from textwrap import TextWrapper
 from fhirspec import FHIRClass
 from fhirspec import FHIR_CLASS_TYPES
 from jinja2 import Environment, PackageLoader, TemplateNotFound
-from jinja2.filters import contextfilter
+from jinja2.filters import pass_context
 from markupsafe import Markup
 
 from logger import logger
 
 
-@contextfilter
+@pass_context
 def string_wrap(ctx, value, width=88, to_json=True):
     """ """
 
@@ -41,7 +41,7 @@ def string_wrap(ctx, value, width=88, to_json=True):
     return list(new_value)
 
 
-@contextfilter
+@pass_context
 def unique_func_name(ctx, func_name, klass_name):
     """ """
     unique_val = sum([ord(c) for c in klass_name])
