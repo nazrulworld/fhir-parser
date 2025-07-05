@@ -29,7 +29,7 @@ def string_wrap(ctx, value, width=88, to_json=True):
 
     if not value:
         return value
-    if to_json is True:
+    if to_json:
         dumper = htmlsafe_json_dumps
     else:
         dumper = simple_wrap
@@ -77,7 +77,7 @@ class FHIRRenderer(object):
         return module_path
 
     def render(self):
-        """The main rendering start point, for subclasses to override."""
+        """The main rendering starting point for subclasses to override."""
         raise Exception("Cannot use abstract superclass' `render` method")
 
     def do_render(self, data, template_name, target_path):
@@ -257,7 +257,7 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                         need_union_type = True
                     # check for one_of_many
                     if prop.one_of_many:
-                        if has_one_of_many is False:
+                        if not has_one_of_many:
                             has_one_of_many = True
                         if klass.name not in one_of_many_fields:
                             one_of_many_fields[klass.name] = {prop.one_of_many: []}
@@ -276,7 +276,7 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                                 enum_list.append(parts[1])
                     else:
                         prop.enum = list()
-                    # check nooptional primitive element
+                    # check non-optional primitive element
                     if (
                         prop.need_primitive_ext
                         and prop.nonoptional
