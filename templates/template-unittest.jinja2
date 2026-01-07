@@ -11,8 +11,8 @@ Revision: {{ info.revision }}
 {%- endif %}
 Last updated: {{ profile.fhir_last_updated }}
 """
-from .fixtures import ExternalValidatorModel  # noqa: F401
 from .. import {{ class.module }}
+from .fixtures import ExternalValidatorModel
 
 {%- for tcase in tests %}
 

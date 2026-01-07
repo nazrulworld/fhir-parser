@@ -1,23 +1,37 @@
 {% include "fhirtypes.py" with context %}
 
+# The dependency hierarchy is circular due to Extension being referenced in FHIRPrimitiveExtension
+# which itself is referenced in every resource. Extension is also referenced in several resources and refers to several resources.
+# Pydantic fields can not use forward references as this causes the "class not fully defined" error at runtime: https://docs.pydantic.dev/2.12/errors/usage_errors/#class-not-fully-defined
+# To properly allow type checkers to type check, use type aliases during type checking and the create_fhir_type workaround at runtime.
+if TYPE_CHECKING:
+    from .fhirprimitiveextension import FHIRPrimitiveExtension
+    {%- for klass in classes %}
+    from . import {{ klass.module }}
+    {% endfor %}
 
-FHIRPrimitiveExtensionType = create_fhir_type(
-    "FHIRPrimitiveExtensionType", "{{ root_module_path }}.fhirprimitiveextension.FHIRPrimitiveExtension"
-)
+    FHIRPrimitiveExtensionType = FHIRPrimitiveExtension
+    {%- for klass in classes %}
+    {{ klass.name}}Type = {{ klass.module }}.{{ klass.name }}
+    {% endfor %}
+else:
+    FHIRPrimitiveExtensionType = create_fhir_type(
+        "FHIRPrimitiveExtensionType", "{{ root_module_path }}.fhirprimitiveextension.FHIRPrimitiveExtension"
+    )
 
-ElementType = create_fhir_element_or_resource_type(
-    "ElementType", "{{ root_module_path }}.element.Element"
-)
+    ElementType = create_fhir_element_or_resource_type(
+        "ElementType", "{{ root_module_path }}.element.Element"
+    )
 
-ResourceType = create_fhir_element_or_resource_type(
-    "ResourceType", "{{ root_module_path }}.resource.Resource"
-)
+    ResourceType = create_fhir_element_or_resource_type(
+        "ResourceType", "{{ root_module_path }}.resource.Resource"
+    )
 
-{%- for klass in classes %}{% if klass.name not in ("Element", "Resource") %}
-{{ klass.name }}Type = create_fhir_type(
-    "{{ klass.name }}Type", "{{ root_module_path }}.{{ klass.module }}.{{ klass.name }}"
-)
-{% endif -%}{% endfor %}
+    {%- for klass in classes %}{% if klass.name not in ("Element", "Resource") %}
+    {{ klass.name }}Type = create_fhir_type(
+        "{{ klass.name }}Type", "{{ root_module_path }}.{{ klass.module }}.{{ klass.name }}"
+    )
+    {% endif -%}{% endfor %}
 __all__ = [
     "BooleanType",
     "StringType",
@@ -42,6 +56,6 @@ __all__ = [
     "TimeType",
     "FHIRPrimitiveExtensionType",
     {%- for klass in classes %}
-	"{{ klass.name }}Type",
-	{% endfor %}
+    "{{ klass.name }}Type",
+    {% endfor %}
 ]

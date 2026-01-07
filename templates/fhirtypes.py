@@ -1,5 +1,7 @@
 from __future__ import annotations as _annotations
 
+from typing import TYPE_CHECKING
+
 from fhir_core.types import (
     Base64BinaryType,
     BooleanType,

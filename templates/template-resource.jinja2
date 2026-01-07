@@ -1,5 +1,4 @@
 {% import 'macros.jinja2' as custom_mac -%}
-from __future__ import annotations as _annotations
 """
 Profile: {{ profile.url }}
 Release: {{ release_name }}
@@ -11,9 +10,11 @@ Revision: {{ info.revision }}
 {%- endif %}
 Last updated: {{ profile.fhir_last_updated }}
 """
-{%- if need_typing %}
+
+from __future__ import annotations as _annotations
+
 import typing
-{%- endif %}
+
 {%- if need_pydantic_field %}
 from pydantic import Field
 {% endif -%}
@@ -44,17 +45,17 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
     __resource_type__ = "{{ klass.resource_type }}"
 {%- endif %}
 {%- for prop in klass.properties %}
-	{% set type_klass_ %}
-		{%- if prop.field_type_module %}{{ prop.field_type_module }}.{{ prop.field_type }}{% else %}{{ prop.field_type }}{% endif -%}
-	{%endset -%}
-	{%- set type_klass %}
-		{%- if prop.is_array %}typing.List[{% if prop.need_primitive_ext  %}{{ type_klass_ }} | None{% else %}{{ type_klass_ }}{% endif %}]{% else %}{{ type_klass_ }}{% endif -%}
-	{% endset %}
-    {{ prop.name }}: {{ type_klass }}{% if not (prop.nonoptional and not prop.one_of_many and not prop.need_primitive_ext) %} | None{% endif %} = Field(  # type: ignore
-		{% if prop.nonoptional and not prop.one_of_many and not prop.need_primitive_ext %}...{% else %}None{% endif %},
-		alias="{{ prop.orig_name }}",
-		title={% if prop.short%}{{ custom_mac.pep8_string_wrap(prop.short, width=70).rstrip()}}{% else %}None{% endif %},
-		description={% if prop.formal%}{{ custom_mac.pep8_string_wrap(prop.formal, width=70).rstrip()}}{% else %}None{% endif %},
+    {% set type_klass_ %}
+        {%- if prop.field_type_module %}{{ prop.field_type_module }}.{{ prop.field_type }}{% else %}{{ prop.field_type }}{% endif -%}
+    {%endset -%}
+    {%- set type_klass %}
+        {%- if prop.is_array %}typing.List[{% if prop.need_primitive_ext  %}{{ type_klass_ }} | None{% else %}{{ type_klass_ }}{% endif %}]{% else %}{{ type_klass_ }}{% endif -%}
+    {% endset %}
+    {{ prop.name }}: {{ type_klass }}{% if not (prop.nonoptional and not prop.one_of_many and not prop.need_primitive_ext) %} | None{% endif %} = Field(
+        default={% if prop.nonoptional and not prop.one_of_many and not prop.need_primitive_ext %}...{% else %}None{% endif %},
+        alias="{{ prop.orig_name }}",
+        title={% if prop.short%}{{ custom_mac.pep8_string_wrap(prop.short, width=70).rstrip()}}{% else %}None{% endif %},
+        description={% if prop.formal%}{{ custom_mac.pep8_string_wrap(prop.formal, width=70).rstrip()}}{% else %}None{% endif %},
         json_schema_extra={
         "element_property": True,
         {%- if prop.is_summary %}
@@ -65,23 +66,23 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
         {%- endif %}
         {%- if prop.one_of_many%}
         # Choice of Data Types. i.e {{ prop.one_of_many }}[x]
-		"one_of_many": "{{ prop.one_of_many }}",
-		"one_of_many_required": {% if prop.nonoptional %}True{% else %}False{% endif %},
+        "one_of_many": "{{ prop.one_of_many }}",
+        "one_of_many_required": {% if prop.nonoptional %}True{% else %}False{% endif %},
         {%- endif %}
         {%- if prop.enum|length > 0 %}
         # note: Enum values can be used in validation,
         # but use in your own responsibilities, read official FHIR documentation.
-		"enum_values": {{ prop.enum|tojson }},
+        "enum_values": {{ prop.enum|tojson }},
         {%- endif %}
         {%- if prop.reference_to_names|length > 0 %}
         # note: Listed Resource Type(s) should be allowed as Reference.
-		"enum_reference_types": {{ prop.reference_to_names|tojson }},
+        "enum_reference_types": {{ prop.reference_to_names|tojson }},
         {%- endif %}
         }
-	)
+    )
     {%- if prop.need_primitive_ext and klass.name != "Extension" %}
-    {{ prop.orig_name }}__ext: {% if prop.is_array %}typing.List[fhirtypes.FHIRPrimitiveExtensionType | None] | None{% else %}fhirtypes.FHIRPrimitiveExtensionType | None{% endif %} = Field(  # type: ignore
-        None,
+    {{ prop.orig_name }}__ext: {% if prop.is_array %}typing.List[fhirtypes.FHIRPrimitiveExtensionType | None] | None{% else %}fhirtypes.FHIRPrimitiveExtensionType | None{% endif %} = Field(
+        default=None,
         alias="_{{ prop.orig_name }}",
         title="Extension field for ``{{ prop.name }}``."
     )
@@ -89,7 +90,7 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
 
 {%- endfor %}
     @classmethod
-    def elements_sequence(cls):
+    def elements_sequence(cls) -> typing.List[str]:
         """returning all element names from
         ``{{ klass.name }}`` according to specification,
         with preserving the original sequence order.
@@ -97,7 +98,7 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
         return {{ klass.expanded_properties_sequence|tojson }}
 
     @classmethod
-    def summary_elements_sequence(cls):
+    def summary_elements_sequence(cls) -> typing.List[str]:
         """returning all element names (those have summary mode are enabled) from ``{{ klass.name }}`` according to specification,
         with preserving the original sequence order.
         """
@@ -114,8 +115,8 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
         """
         required_fields = [
             {%- for field, ext_field in required_primitive_element_fields[klass.name] %}
-			("{{ field }}", "{{ ext_field }}"){% if not loop.last -%},{% endif -%}
-	        {% endfor -%}
+            ("{{ field }}", "{{ ext_field }}"){% if not loop.last -%},{% endif -%}
+            {% endfor -%}
         ]
         return required_fields
 {% endif -%}
@@ -134,14 +135,14 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
         data type chosen from among the list of permitted data types.
         """
         one_of_many_fields = {
-	        {%- for prefix in one_of_many_fields[klass.name] %}
-			"{{ prefix }}": [
-				{%- for field in one_of_many_fields[klass.name][prefix] %}
-			    "{{ field }}"{% if not loop.last -%},{% endif -%}
-				{% endfor -%}
-		    ]{% if not loop.last -%},{% endif -%}
-	        {% endfor -%}
-	    }
+            {%- for prefix in one_of_many_fields[klass.name] %}
+            "{{ prefix }}": [
+                {%- for field in one_of_many_fields[klass.name][prefix] %}
+                "{{ field }}"{% if not loop.last -%},{% endif -%}
+                {% endfor -%}
+            ]{% if not loop.last -%},{% endif -%}
+            {% endfor -%}
+        }
         return one_of_many_fields
 {% endif -%}
 {%- endfor %}
