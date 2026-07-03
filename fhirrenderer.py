@@ -288,7 +288,7 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                             required_primitive_element_fields[klass.name] = []
                         if klass.name == "Extension":
                             required_primitive_element_fields[klass.name].append(
-                                (prop.orig_name, "None")
+                                (prop.orig_name, None)
                             )
                         else:
                             required_primitive_element_fields[klass.name].append(

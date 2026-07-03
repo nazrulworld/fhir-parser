@@ -115,7 +115,7 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
         """
         required_fields = [
             {%- for field, ext_field in required_primitive_element_fields[klass.name] %}
-            ("{{ field }}", {% if ext_field %}"{{ ext_field }}" {% else %} ext_field {% endif -%} ){% if not loop.last -%},{% endif -%}
+            ("{{ field }}", {% if ext_field %}"{{ ext_field }}" {% else %} {{ ext_field }} {% endif -%}){% if not loop.last -%},{% endif -%}
             {% endfor -%}
         ]
         return required_fields
