@@ -281,15 +281,19 @@ class FHIRStructureDefinitionRenderer(FHIRRenderer):
                         prop.need_primitive_ext
                         and prop.nonoptional
                         and not prop.one_of_many
-                        and klass.name != "Extension"
                     ):
                         if has_required_primitive_element is False:
                             has_required_primitive_element = True
                         if klass.name not in required_primitive_element_fields:
                             required_primitive_element_fields[klass.name] = []
-                        required_primitive_element_fields[klass.name].append(
-                            (prop.orig_name, prop.orig_name + "__ext")
-                        )
+                        if klass.name == "Extension":
+                            required_primitive_element_fields[klass.name].append(
+                                (prop.orig_name, "None")
+                            )
+                        else:
+                            required_primitive_element_fields[klass.name].append(
+                                (prop.orig_name, prop.orig_name + "__ext")
+                            )
 
                     # Fix Primitives Types
                     if prop_klass.class_type == FHIR_CLASS_TYPES.primitive_type:
