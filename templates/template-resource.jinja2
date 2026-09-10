@@ -80,7 +80,7 @@ class {{ klass.name }}({% if klass.superclass in imports %}{{ klass.superclass.m
         {%- endif %}
         }
     )
-    {%- if prop.need_primitive_ext and klass.name != "Extension" %}
+    {%- if prop.need_primitive_ext %}
     {{ prop.orig_name }}__ext: {% if prop.is_array %}typing.List[fhirtypes.FHIRPrimitiveExtensionType | None] | None{% else %}fhirtypes.FHIRPrimitiveExtensionType | None{% endif %} = Field(
         default=None,
         alias="_{{ prop.orig_name }}",
